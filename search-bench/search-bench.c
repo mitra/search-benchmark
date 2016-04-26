@@ -12,7 +12,7 @@
 #include <HAL/hal/hal.h>
 #include <HAL/hal/cluster/dsu.h>
 #include <inttypes.h>
-#define CYCLES 800
+#define CYCLES 800e6
 typedef struct {
   uint64_t start;
   uint64_t end;
