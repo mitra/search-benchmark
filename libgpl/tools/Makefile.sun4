@@ -1,0 +1,103 @@
+#
+#  %Z%  FILE: %M%  RELEASE: %I%  DATE: %G%, %U%
+#
+# Makefile
+#
+
+PROGRAMS = dirtree dump events_reader ffc fifo gurls hls maple molox \
+           nerd netecho netmet prosper rdate rename rpm \
+           sdp shifty syncsrc talknet wst yip
+
+ARCH = $(TARGET_ARCH:-%=%)
+ROOT = ..
+INCLUDE_DIR = $(ROOT)/include
+LIB_DIR = $(ROOT)/lib
+LIBS = \
+	$(LIB_DIR)/libgpl/libgpl.a \
+	-lm
+#	$(LIB_DIR)/libds/libds.a \
+#	$(LIB_DIR)/libtpocc/libtpocc.a \
+#	$(LIB_DIR)/libutilunix/libutilunix.a \
+
+INSTALL_DIR = $(HOME)/local/bin/$(ARCH)
+
+CC = /bin/cc
+CFLAGS = -g
+CPPFLAGS = -DNO_TIMESPEC=1 -I. -I$(INCLUDE_DIR) -I/folks/alexm/local/include
+
+.KEEP_STATE:
+
+all::	$(PROGRAMS)
+
+dirtree:  dirtree.o
+	$(LINK.c) dirtree.o $(LIBS) -o $@
+
+dump:  dump.o
+	$(LINK.c) dump.o $(LIBS) -o $@
+
+events_reader:  events_reader.o
+	$(LINK.c) events_reader.o $(LIBS) -o $@
+
+ffc:  ffc.o
+	$(LINK.c) ffc.o $(LIBS) -o $@
+
+fifo:  fifo.o
+	$(LINK.c) fifo.o $(LIBS) -o $@
+
+gurls:  gurls.o
+	$(LINK.c) gurls.o $(LIBS) -o $@
+
+hls:  hls.o
+	$(LINK.c) hls.o $(LIBS) -o $@
+
+maple:  maple.o
+	$(LINK.c) maple.o $(LIBS) -o $@
+
+molox:  molox.o
+	$(LINK.c) molox.o $(LIBS) -o $@
+
+nerd:  nerd.o
+	$(LINK.c) nerd.o $(LIBS) -o $@
+
+netecho:  netecho.o
+	$(LINK.c) netecho.o $(LIBS) -o $@
+
+netmet:  netmet.o
+	$(LINK.c) netmet.o $(LIBS) -o $@
+
+prosper:  prosper.o
+	$(LINK.c) prosper.o $(LIBS) -o $@
+
+rename:  rename.o
+	$(LINK.c) rename.o $(LIBS) -o $@
+
+rdate:  rdate.o
+	$(LINK.c) rdate.o $(LIBS) -o $@
+
+rpm:  rpm.o
+	$(LINK.c) rpm.o $(LIBS) -o $@
+
+sdp:  sdp.o
+	$(LINK.c) sdp.o $(LIBS) -lcurses -ltermcap -o $@
+
+shifty:  shifty.o
+	$(LINK.c) shifty.o $(LIBS) -o $@
+
+syncsrc:  syncsrc.o
+	$(LINK.c) syncsrc.o $(LIBS) -o $@
+
+talknet:  talknet.o
+	$(LINK.c) talknet.o $(LIBS) -o $@
+
+wst:  wst.o
+	$(LINK.c) wst.o $(LIBS) -o $@
+
+yip:  yip.o
+	$(LINK.c) yip.o $(LIBS) -o $@
+
+clean::
+	-$(RM) $(PROGRAMS)
+	-$(RM) *.o
+
+install:
+	cp $(PROGRAMS) $(INSTALL_DIR)

@@ -1,0 +1,87 @@
+# $Id: Makefile.nds,v 1.1 2009/04/19 22:53:48 alex Exp $
+#
+
+PROGRAMS = colior frob rdate scanet tag311 talknet
+
+#*******************************************************************************
+#    Define the ARM-specific compilation tools to be used.  (Most NDS
+#    developers include devkitPro's "base_rules" and "ds_rules" for these
+#    definitions and for the suffix rules, but these files were written
+#    without following the conventions used in Make's implicit rules.
+#    The implicit rules work just fine for C and C++ files.)
+PREFIX	=	arm-eabi-
+CC	=	$(PREFIX)gcc
+LD	=	$(PREFIX)gcc
+OBJCOPY	=	$(PREFIX)objcopy
+#*******************************************************************************
+
+ROOT = ..
+LIBS = \
+	$(ROOT)/libgpl/libgpl.a \
+	$(ROOT)/libxdr/libxdr.a \
+	-L$(DEVKITPRO)/libnds/lib -ldswifi9 -lfat -lnds9
+
+CPPFLAGS := \
+	-DDEVKITPRO_R24 \
+	-DNDS \
+	-DARM9 \
+	-I. \
+	-I$(ROOT)/include \
+	-I$(DEVKITPRO)/libnds/include
+
+CFLAGS := \
+	-g -Wall -O2 \
+	-ffast-math -fomit-frame-pointer \
+	-march=armv5te -mtune=arm946e-s \
+	-mthumb -mthumb-interwork
+
+LDFLAGS := \
+	-specs=ds_arm9.specs \
+	-mthumb -mthumb-interwork
+
+all::	$(PROGRAMS:=.nds)
+
+colior.nds: colior.c
+	$(COMPILE.c) -Dmain=$(@:.nds=) -o $(@:.nds=).o $<
+	$(COMPILE.c) -DPROGRAM=$(@:.nds=) -DSPROGRAM=\"$(@:.nds=)\" -o StdIONDS.o $(ROOT)/libgpl/StdIONDS.c
+	$(LD) $(LDFLAGS) -o $(@:.nds=).elf StdIONDS.o $(@:.nds=).o $(LIBS)
+	$(OBJCOPY) -O binary $(@:.nds=).elf $(@:.nds=).arm9
+	ndstool -c $@ -9 $(@:.nds=).arm9
+
+frob.nds: frob.c
+	$(COMPILE.c) -Dmain=$(@:.nds=) -o $(@:.nds=).o $<
+	$(COMPILE.c) -DPROGRAM=$(@:.nds=) -DSPROGRAM=\"$(@:.nds=)\" -o StdIONDS.o $(ROOT)/libgpl/StdIONDS.c
+	$(LD) $(LDFLAGS) -o $(@:.nds=).elf StdIONDS.o $(@:.nds=).o $(LIBS)
+	$(OBJCOPY) -O binary $(@:.nds=).elf $(@:.nds=).arm9
+	ndstool -c $@ -9 $(@:.nds=).arm9
+
+rdate.nds: rdate.c
+	$(COMPILE.c) -Dmain=$(@:.nds=) -o $(@:.nds=).o $<
+	$(COMPILE.c) -DPROGRAM=$(@:.nds=) -DSPROGRAM=\"$(@:.nds=)\" -DDSWIFI -o StdIONDS.o $(ROOT)/libgpl/StdIONDS.c
+	$(LD) $(LDFLAGS) -o $(@:.nds=).elf StdIONDS.o $(@:.nds=).o $(LIBS)
+	$(OBJCOPY) -O binary $(@:.nds=).elf $(@:.nds=).arm9
+	ndstool -c $@ -9 $(@:.nds=).arm9
+
+scanet.nds: scanet.c
+	$(COMPILE.c) -Dmain=Const -o $(@:.nds=).o $<
+	$(COMPILE.c) -DPROGRAM=Const -DSPROGRAM=\"Const\" -DDSWIFI -o StdIONDS.o $(ROOT)/libgpl/StdIONDS.c
+	$(LD) $(LDFLAGS) -o $(@:.nds=).elf StdIONDS.o $(@:.nds=).o $(LIBS)
+	$(OBJCOPY) -O binary $(@:.nds=).elf $(@:.nds=).arm9
+	ndstool -c $@ -9 $(@:.nds=).arm9
+
+tag311.nds: tag311.c
+	$(COMPILE.c) -Dmain=$(@:.nds=) -o $(@:.nds=).o $<
+	$(COMPILE.c) -DPROGRAM=$(@:.nds=) -DSPROGRAM=\"$(@:.nds=)\" -o StdIONDS.o $(ROOT)/libgpl/StdIONDS.c
+	$(LD) $(LDFLAGS) -o $(@:.nds=).elf StdIONDS.o $(@:.nds=).o $(LIBS)
+	$(OBJCOPY) -O binary $(@:.nds=).elf $(@:.nds=).arm9
+	ndstool -c $@ -9 $(@:.nds=).arm9
+
+talknet.nds: talknet.c
+	$(COMPILE.c) -Dmain=$(@:.nds=) -o $(@:.nds=).o $<
+	$(COMPILE.c) -DPROGRAM=$(@:.nds=) -DSPROGRAM=\"$(@:.nds=)\" -DDSWIFI -o StdIONDS.o $(ROOT)/libgpl/StdIONDS.c
+	$(LD) $(LDFLAGS) -o $(@:.nds=).elf StdIONDS.o $(@:.nds=).o $(LIBS)
+	$(OBJCOPY) -O binary $(@:.nds=).elf $(@:.nds=).arm9
+	ndstool -c $@ -9 $(@:.nds=).arm9
+
+clean::
+	-$(RM) *.o *.nds *.arm9 *.elf

@@ -1,0 +1,14 @@
+/* $Id: damx_all.idl,v 1.1 2004/07/08 01:15:38 alex Exp $ */
+/*******************************************************************************
+
+    damx_all.idl
+
+    DAIS Marshaling IDL - allows IDL2H to process all of the DAIS IDL files
+        in a single C Preprocessor run.
+
+*******************************************************************************/
+
+//    DAIS IDL.
+
+#include  "DAFEvents.idl"
+#include  "DAFQuery.idl"

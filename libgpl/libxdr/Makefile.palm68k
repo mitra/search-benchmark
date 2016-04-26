@@ -1,0 +1,76 @@
+# $Id: Makefile.palm68k,v 1.2 2004/05/24 19:34:47 alex Exp alex $
+#
+
+LIBRARY = libxdr
+
+SRCS =	\
+	xdr_array.c \
+	xdr.c \
+	xdr_float.c \
+	xdr_mem.c \
+	xdr_rec.c \
+	xdr_reference.c \
+	xdr_stdio.c
+
+OBJS = $(SRCS:.c=.o)
+
+ROOT = ..
+APP = $(LIBRARY)
+OCD_HEADERS = \
+	$(ROOT)/include/palm/*.h \
+	$(ROOT)/include/rpc/*.h
+LD_SCRIPTS = \
+	$(APP)-sections.o \
+	$(APP)-sections.ld
+
+ifeq ($(shell if test -d /usr/lib/gcc-lib/m68k-palmos/; then echo yes; fi), yes)
+GCC_INCLUDE = $(wildcard /usr/lib/gcc-lib/m68k-palmos/*/include)
+else
+GCC_INCLUDE = $(wildcard /usr/local/lib/gcc-lib/m68k-palmos/*/include)
+endif
+
+ifeq ($(shell if test -d /usr/m68k-palmos/include; then echo yes; fi), yes)
+PRC_INCLUDE = /usr/m68k-palmos/include
+else
+PRC_INCLUDE = /usr/local/m68k-palmos/include
+endif
+
+AR = m68k-palmos-ar
+ARFLAGS = rv
+CC = m68k-palmos-gcc
+CFLAGS = -g -O -Wall $(PALMOS_OPTIONS)
+CPPFLAGS = \
+	-nostdinc \
+	-I. \
+	-I$(ROOT)/include \
+	-I$(ROOT)/include/palm \
+	-I$(GCC_INCLUDE) \
+	-I$(PRC_INCLUDE)
+MULTIGEN = m68k-palmos-multigen
+RANLIB = m68k-palmos-ranlib
+RM = rm -f
+
+all::	$(LIBRARY).a $(APP).def $(APP)-sections.o
+
+$(LIBRARY).a: $(OBJS)
+	$(RM) $@
+	$(AR) $(ARFLAGS) $@ $(OBJS)
+	$(RANLIB) $@
+
+$(APP).def: $(OCD_HEADERS)
+	$(RM) $@
+	echo "application {" $(APP) "cam }" > $@
+	echo "" >> $@
+	echo "multiple code {" >> $@
+	grep -h '  OCD (' $(OCD_HEADERS) | grep -v define | sed -e 's/.*OCD (/    /' | sed -e 's/).*//' | sort | uniq >> $@
+	echo "}" >> $@
+
+$(APP)-sections.o: $(APP)-sections.s
+	$(CC) $(PALMOS_OPTIONS) -c $(APP)-sections.s
+
+$(APP)-sections.s $(APP)-sections.ld: $(APP).def
+	$(MULTIGEN) $(APP).def
+
+clean::
+	-$(RM) $(OBJS) $(LIBRARY).a
+	-$(RM) $(APP).def $(APP)-sections.*

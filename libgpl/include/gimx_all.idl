@@ -1,0 +1,57 @@
+/* $Id: gimx_all.idl,v 1.1 2004/07/08 01:15:38 alex Exp $ */
+/*******************************************************************************
+
+    gimx_all.idl
+
+    GIOP Marshaling IDL - allows IDL2H to process all of the CORBA IDL files
+        in a single C Preprocessor run.
+
+*******************************************************************************/
+
+//    Core IDL.
+
+#include  "CORBA_IDL/orb.idl"
+
+//    Interoperability IDL.
+
+#include  "Interop/BiDirPolicy.idl"
+#include  "Interop/CONV_FRAME.idl"
+#include  "Interop/CSIIOP.idl"
+#include  "Interop/GIOP.idl"
+#include  "Interop/GSSUP.idl"
+#include  "Interop/IIOP.idl"
+#include  "Interop/IOP_DCE.idl"
+#include  "Interop/SendingContext.idl"
+
+//    CORBAservices IDL.
+
+#include  "CORBAservices/ConcurrencyControl.idl"
+#include  "CORBAservices/CosCollection.idl"
+#include  "CORBAservices/CosExternalizationContainment.idl"
+#include  "CORBAservices/CosExternalization.idl"
+#include  "CORBAservices/CosExternalizationReference.idl"
+#include  "CORBAservices/CosLicensingManager.idl"
+#include  "CORBAservices/CosLifeCycleContainment.idl"
+#include  "CORBAservices/CosLifeCycleReference.idl"
+#include  "CORBAservices/CosPersistenceDS_CLI.idl"
+#include  "CORBAservices/CosPersistencePDS_DA.idl"
+#include  "CORBAservices/CosPersistencePO.idl"
+#include  "CORBAservices/CosPersistencePOM.idl"
+#include  "CORBAservices/CosQuery.idl"
+#include  "CORBAservices/CosTimerEvent.idl"
+#include  "CORBAservices/CosTradingDynamic.idl"
+#include  "CORBAservices/CosTradingRepos.idl"
+#include  "CORBAservices/CosTSPortability.idl"
+#include  "CORBAservices/CosTypedEventChannelAdmin.idl"
+#include  "CORBAservices/DCE_CIOPSecurity.idl"
+#include  "CORBAservices/LifeCycleService.idl"
+#include  "CORBAservices/Lname-library.idl"
+#include  "CORBAservices/NRService.idl"
+#include  "CORBAservices/SECIOP.idl"
+#include  "CORBAservices/SecurityAdmin.idl"
+#include  "CORBAservices/SecurityReplaceable.idl"
+#include  "CORBAservices/SSLIOP.idl"
+
+//    Miscellaneous IDL.
+
+#include  "Misc/Messaging.idl"

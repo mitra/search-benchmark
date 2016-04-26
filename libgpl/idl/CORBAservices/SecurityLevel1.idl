@@ -1,0 +1,24 @@
+// $Id: SecurityLevel1.idl,v 1.1 2003/05/29 00:22:11 alex Exp $
+//File: SecurityLevel1.idl
+//Part of the Security Service
+
+#ifndef _SECURITY_LEVEL_1_IDL
+#define _SECURITY_LEVEL_1_IDL
+
+#include <Security.idl>
+
+#pragma prefix "omg.org"
+
+module SecurityLevel1 {
+
+    interface Current : CORBA::Current {	// Locality Constrained
+
+        // thread specific operations
+
+        Security::AttributeList get_attributes (            
+            in    Security::AttributeTypeList  attributes 
+        );
+
+    };
+};
+#endif /* _SECURITY_LEVEL_1_IDL */

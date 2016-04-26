@@ -1,0 +1,1054 @@
+\ $Id: httpd.fr,v 1.7 2009/10/01 10:00:57 alex Exp alex $
+\ ******************************************************************************
+\
+\    HTTPD - is a simple web (HTTP) server that can handle multiple clients
+\        simultaneously.
+\
+\        Bernd Paysan wrote a very powerful Gforth web server, which is
+\        documented at:
+\
+\                http://www.jwdt.com/~paysan/httpd-en.html
+\
+\        I read his documentation many times, trying to wrap my inexperienced
+\        FORTH brain around his code.  Naturally, I borrowed some of his ideas.
+\        His web server runs off UNIX's inetd and thus handles a single client
+\        via standard I/O.  My web server uses actual network connections and
+\        handles multiple clients simultaneously.  (Inetd can, of course,
+\        spawn multiple instances of the Gforth web server to handle multiple
+\        clients.)  Again, Bernd's web server is very powerful and more
+\        feature-full than mine.  And, adding insult to injury, he says,
+\        "The following code was created in just a few hours of work ..."!
+\
+\        HTTPD revolves around an I/O event dispatcher.  In the MAIN LOOP
+\        section at the bottom of this program, the dispatcher is created,
+\        the TCP/IP listening port is created, and the listening port is
+\        registered with the dispatcher as an input source.  Control is
+\        then turned over to the dispatcher to monitor (i) the listening
+\        port for incoming connection requests and (ii) any future client
+\        connections.
+\
+\        Whenever a client tries to connect to the server on port 80, the
+\        dispatcher detects the pending connection request and invokes the
+\        NEW-CLIENT callback word.  NEW-CLIENT accepts the connection request,
+\        the operating system creates a new data connection for the client,
+\        and the new data connection is registered with the dispatcher as
+\        another input source.  (Thus, at any given time, HTTPD will have
+\        the listening port and the data connections of all connected clients
+\        registered with the dispatcher.)
+\
+\        ... to be documented further ...
+\
+\
+\        The code is divided into the following sections (section 4 is
+\        incomplete, but the other sections are complete and have been
+\        tested):
+\
+\
+\    (1) File-extension-to-MIME-type Translation - loads the file extension
+\        to MIME type mappings from a "mime.types" file into a separate Forth
+\        wordlist.
+\
+\        lookup-mime - translates a file's extension to the file's MIME type.
+\        mime-of - is a defining word for suffix-to-type mappings.
+\        map-mime-type - defines a suffix-to-type map using the mime-of word.
+\        read-mime-file - reads the file-suffix-to-MIME-type mappings from a
+\            "mime.types" file and enters the mappings into the dictionary.
+\
+\
+\    (2) Session Object - defines a session object structure.  Each client that
+\        connects to the server is allocated a session object for the purpose
+\        of accumulating information about the session while the client's HTTP
+\        request is being read.
+\
+\        sobj-request@/sobj-request! - gets/sets the session's request string.
+\        sobj-pathname@/sobj-pathname! - gets/sets the session's URI string.
+\        sobj-version@/sobj-version! - gets/sets the session's version string.
+\        session-create - creates and initializes a session object.
+\        session-cancel-cb - cancels a session's input or timeout callback.
+\        session-destroy - destroys a session object.
+\
+\
+\    (3) Build Pathnames - from the path in HTTP GET and HEAD requests.
+\
+\        replace-% - replaces "%xx" sequences in a string with the specified
+\            hexadecimal values.
+\        split-name-path - extracts the user name and path from a GET or HEAD
+\            request's pathname.
+\        translate-~ - gets the value of the TILDE_TRANSLATION environment
+\            variable and uses it as a C format string for formatting the
+\            final pathname from the GET or HEAD request.
+\        append-/ - checks to see if a pathname without a trailing "/" refers
+\            to a directory and, if so, appends a "/" to the pathname.
+\        check-for-index-html - checks to see if a directory has a default
+\            HTML file in it.
+\        build-pathname - builds the full pathname for the file specified in an
+\            HTTP GET or HEAD request.
+\
+\
+\    (4) HTTP Request Handling - processes GET and HEAD requests.
+\
+\        http-request? - returns true if a string is an HTTP request (GET,
+\            HEAD, or POST).
+\        parse-request - parses a GET or HEAD HTTP request and returns the
+\            fully resolved pathname and the HTTP version string.
+\        write-stream - writes an escaped string out to a network stream.
+\        report-error - generates an HTTP error response header.
+\        generate-header-wrapped - wrapped header generator word.
+\        generate-header - generates the HTTP response header for a request.
+\        strip-directory - strips the directory information from a pathname.
+\        show-header - generates a directory listing HTML header.
+\        show-directory - generates an HTML list item for a directory.
+\        show-file - generates an HTML list item for a file.
+\        list-directory - generates a formatted list of a directory's contents
+\            and writes the list out to the client's network connection.
+\        transfer-file - reads the contents of a file and writes the contents
+\            out to the client's network connection.
+\        GET - returns a file to the client.
+\        HEAD - returns file information to the client.
+\        keepalive-timeout-cb - is invoked by the I/O event dispatcher when
+\            no input has been received from a client after N seconds; the
+\            network connection to the client is closed and the session is
+\            destroyed.
+\        add-timeout-cb - registers a keepalive timeout callback.
+\        process-request - processes an HTTP request.
+\
+\
+\    (5) Network Client I/O - handles the addition of new clients and reading
+\        their HTTP requests.
+\
+\        read-client - reads and processes HTTP requests from a client.
+\        new-client - accepts a network connection request, creates a session
+\            object for the new client, and registers the client as an input
+\            source.
+\        new-listener - creates a TCP/IP listening endpoint for HTTP connection
+\            requests.
+\
+\
+\    (6) Main Loop - is the start-up code for the HTTP server.  The server's
+\            listening port is created, the MIME file is loaded, and then the
+\            server loops forever, monitoring network I/O and dispatching
+\            requests.
+\
+\ ******************************************************************************
+
+
+s" utility.fr" INCLUDED
+
+
+s" loading httpd.fr" type cr
+
+\ ******************************************************************************
+\
+\    Load the file-suffix-to-MIME-type mappings from the "mime.types" file(s).
+\    The mappings are entered into the dictionary in a separate wordlist,
+\    MIME-TYPES, to prevent conflicts with existing FORTH word definitions.
+\    The wordlist is used as a lookup table.
+\
+\    Depending on the size of the "mime.types" file, the mappings may consume
+\    a lot of dictionary space.  Consequently, you may need to increase the
+\    dictionary size by setting environment variable FICL_DICTIONARY_SIZE
+\    before running FINC.  (FICL's default size is 12288 cells, of which
+\    about 7500 cells are used by standard FICL.  A comprehensive, 750-line
+\    "mime.types" file I downloaded from the Internet overflowed the default
+\    dictionary size.)
+\
+\ ******************************************************************************
+
+
+128 constant MAX_INPUT_LINE
+
+wordlist constant mime-types		\ Define MIME types separately.
+
+
+\ ******************************************************************************
+\    LOOKUP-MIME - looks up a file's suffix in the MIME-TYPES wordlist and
+\        returns the corresponding MIME type string.  If the suffix is not
+\        found, the default MIME type, "application/octet-stream", is returned.
+\ ******************************************************************************
+
+s" application/octet-stream" strcdup constant DEFAULT-MIME-TYPE
+
+: lookup-mime		( c-addr1 u1 -- c-addr2 u2 )
+    2dup [char] . strrchr ?dup IF	\ Locate the file suffix.
+        1 /string			\ Advance past the period.
+        2swap 2drop
+    THEN
+    MIME-TYPES search-wordlist
+    IF
+        execute				\ Retrieve the MIME type.
+    ELSE
+        DEFAULT-MIME-TYPE count		\ Use the default MIME type.
+    THEN
+    ;
+
+
+\ ******************************************************************************
+\    MIME-OF: - is a defining word for suffix-to-type mappings.  At compile
+\        time, the file suffix is entered as a new word into the dictionary,
+\        with its data value being the corresponding MIME type.  (NOTE that
+\        the MIME type string is passed in on the stack as a counted string.)
+\        When a file suffix word is executed, the corresponding MIME type
+\        string is pushed on the stack.
+\ ******************************************************************************
+
+: mime-of:
+    CREATE		( c-addr -- )	\ Counted MIME-type string.
+        ,
+    DOES>		( -- c-addr u )
+        @
+        count
+    ;
+
+
+\ ******************************************************************************
+\    MAP-MIME-TYPE - processes a line from the mime.types file.  The line is
+\        structured as follows: "<MIME type> [<suffix1> ... <suffixN>]", where
+\        there may be zero or more file suffixes associated with the MIME type.
+\        For each suffix, "<MIME type> mime-of <suffix>" is evaluated to define
+\        the suffix as a FORTH word that returns its MIME type as a string.
+\ ******************************************************************************
+
+: map-mime-type		( c-addr u -- )
+    getword-ws				\ Get the mime type.
+    2over -leading-ws nip
+    IF strcdup ELSE 2drop 0 THEN	\ Make a single copy for all suffixes.
+    { MIME-TYPE }
+    BEGIN
+        getword-ws dup 0 >		\ Get the next file suffix.
+    WHILE
+        MAX_INPUT_LINE allocate
+        abort" Error allocating command buffer!"
+        >r
+        MIME-TYPE -rot			\ <mime-type>
+        r@ 0 s" mime-of: " strcat	\ mime-of:
+        2swap strcat			\ <file-suffix>
+        evaluate
+        r> free drop
+    REPEAT
+    2drop 2drop
+    ;
+
+
+\ ******************************************************************************
+\    READ-MIME-FILE - reads the file-suffix-to-MIME-type mappings from a
+\        "mime.types" file and enters the mappings into the dictionary.
+\ ******************************************************************************
+
+: read-mime-file	( c-addr u -- )
+    s" Loading MIME types from " type 2dup type s" ." type cr
+    MAX_INPUT_LINE allocate abort" Error allocating input buffer!"
+    { INBUF }
+    r/o open-file
+    abort" Error opening MIME types file!"
+    BEGIN
+        dup INBUF MAX_INPUT_LINE rot
+        read-line
+        abort" Error reading MIME types file!"
+    WHILE
+        INBUF swap squeeze-ws
+        over c@ [char] # =		\ Comment?
+        over 0=				\ Blank line?
+        logical-or IF			\ Ignore?
+            2drop
+        ELSE				\ Mime-type specification.
+            map-mime-type
+        THEN
+    REPEAT
+    drop close-file drop
+    INBUF free drop
+    ;
+
+\ ******************************************************************************
+\    A session object, created when a client connects to HTTPD, is used to
+\    maintain client-specific information as its HTTP request is being received.
+\    This information includes:
+\        (1) the LF-terminated network stream to the client,
+\        (2) the callback invoked when input is detected from the client,
+\        (3) the callback invoked after N seconds of the client being idle,
+\        (2) the HTTP request (GET, HEAD, or POST),
+\        (3) the full pathname of the requested file, and
+\        (4) the HTTP version string.
+\ ******************************************************************************
+
+
+begin-structure session-object
+    field: sobj-stream		\ LF-terminated network stream to client.
+    field: sobj-input-cb	\ Registered input callback.
+    field: sobj-timeout-cb	\ Registered timeout callback.
+    sfield: sobj-request	\ GET/HEAD/POST request string.
+    sfield: sobj-pathname	\ Pathname string from HTTP request.
+    sfield: sobj-version	\ HTTP version.
+    field: sobj-close		\ Close session and connection.
+end-structure
+
+
+\ SOBJ-REQUEST@ - gets the HTTP request string.
+
+: sobj-request@		( a-addr -- c-addr u )
+    sobj-request 2@
+    ;
+
+
+\ SOBJ-REQUEST! - sets the HTTP request string.  If the previous string was
+\    dynamically allocated (indicated by a non-zero length), free it before
+\    storing the new string.
+
+: sobj-request!		( c-addr u a-addr -- )
+    sobj-request
+    dup 2@ IF free THEN drop
+    2!
+    ;
+
+
+\ SOBJ-PATHNAME@ - gets the pathname string.
+
+: sobj-pathname@	( a-addr -- c-addr u )
+    sobj-pathname 2@
+    ;
+
+
+\ SOBJ-PATHNAME! - sets the pathname string.  If the previous string was
+\    dynamically allocated (indicated by a non-zero length), free it before
+\    storing the new string.
+
+: sobj-pathname!	( c-addr u a-addr -- )
+    sobj-pathname
+    dup 2@ IF free THEN drop
+    2!
+    ;
+
+
+\ SOBJ-VERSION@ - gets the version string.
+
+: sobj-version@		( a-addr -- c-addr u )
+    sobj-version 2@
+    ;
+
+
+\ SOBJ-VERSION! - sets the version string.  If the previous string was
+\    dynamically allocated (indicated by a non-zero length), free it before
+\    storing the new string.
+
+: sobj-version!		( c-addr u a-addr -- )
+    sobj-version
+    dup 2@ IF free THEN drop
+    2!
+    ;
+
+
+\ SESSION-CREATE - dynamically allocates a session object.
+
+: session-create	( -- a-addr )
+    session-object allocate
+    abort" Error allocating session object!"
+    0 over sobj-stream !
+    0 over sobj-input-cb !
+    0 over sobj-timeout-cb !
+    0 over sobj-close !
+    dup s" " rot sobj-request 2!
+    dup s" " rot sobj-pathname 2!
+    dup s" " rot sobj-version 2!
+    ;
+
+
+\ SESSION-CANCEL-CB - cancels the specfied callback.
+
+: session-cancel-cb	( field -- )
+    dup @ ?dup IF
+        iox-cancel drop 0 swap !
+    ELSE
+        drop
+    THEN
+    ;
+
+
+\ SESSION-DESTROY - frees a session object.  The network connection to the
+\    client is closed, any active callbacks are cancelled, and dynamically
+\    allocated strings are freed.  Finally, the storage for the session
+\    object itself is freed.
+
+: session-destroy	( a-addr -- )
+    dup sobj-stream @ ?dup IF lfn-destroy drop THEN
+    dup sobj-input-cb session-cancel-cb
+    dup sobj-timeout-cb session-cancel-cb
+    dup s" " rot sobj-request!	\ Free the request string.
+    dup s" " rot sobj-pathname!	\ Free the pathname.
+    dup s" " rot sobj-version!	\ Free the version string.
+    free drop			\ Free the session object.
+    ;
+
+\ ******************************************************************************
+\    Build Pathnames - from the path in HTTP GET and HEAD requests.
+\ ******************************************************************************
+
+
+\ ******************************************************************************
+\    REPLACE-% - returns a pathname string with "%xx" sequences representing
+\        special characters replaced by the special characters.  In such a
+\        sequence, "xx" is the hexadecimal value of a special character.  These
+\        sequences are most frequently used for embedded blanks in file names.
+\ ******************************************************************************
+
+: replace-%		( c-addr u -- c-addr u1 )
+    BEGIN
+        2dup [char] % strchr	\ Search string for "%".
+        dup IF
+            dup 3 < IF		\ 3 characters required for "%xx".
+                2drop 0
+            THEN
+        THEN
+        ?dup
+    WHILE
+        3 -			\ c-addr u1 c-addr' u' -- c-addr u1 c-addr' u'-3
+        swap dup char+ 2	\ -- c-addr u1 u'-3 c-addr' c-addr'+1 2
+        hex2char		\ Convert "xx" to the special character.
+        over c!			\ Store the special character in the string.
+        char+ dup char+ char+	\ -- c-addr u1 u'-3 c-addr'+1 c-addr'+3
+        swap rot		\ -- c-addr u1 c-addr'+3 c-addr'+1 u'-3
+        cmove			\ Move the remaining string down 2 characters.
+        2 -			\ Adjust the length of the overall string.
+    REPEAT
+    ;
+
+
+\ ******************************************************************************
+\    SPLIT-NAME-PATH - extracts the user name and path from a GET or HEAD
+\        request's pathname.  The two items are returned on the stack as
+\        strings, with the name on top and the path below it.
+\
+\        The pathnames in a GET or HEAD request are of the following forms:
+\
+\        Unnamed:    /    /software/    /software/index.html
+\        Named:      /~alex/    /~alex/software/    /~alex/software/index.html
+\
+\        Split-name-path gets the user name from "~<name>", if present.  The
+\        remaining path is extracted as follows.  In a request without a user
+\        name, return everything following the first "/".  In a request with
+\        a user name, return everything following the second "/".
+\ ******************************************************************************
+
+: split-name-path	( c-addr1 u1 -- c-addr2 u2 c-addr3 u3 )
+    2dup nip -rot		\ -- u1 c-addr1 u1
+    s" /~" search IF		\ "/~<name>/" present?
+        2 /string		\ -- u1 c-addr3 u'
+        2dup s" /" search IF	\ Search for following "/".
+            nip -		\ -- u1 c-addr3 u3
+        ELSE
+            2drop		\ -- u1 c-addr3 u3
+        THEN
+    ELSE			\ No "/~<name>/"; use c-addr3=c-addr1, u3=0.
+        drop 0			\ -- u1 c-addr3 0
+    THEN
+    { 2:USER-NAME }		\ Save c-addr3/u3 and now determine c-addr2/u2.
+    USER-NAME chars +		\ -- u1 c-addr2-1
+    over USER-NAME nip		\ -- u1 c-addr2-1 u1 u3
+    dup IF 2 + THEN		\ If user name present, account for "/~".
+    -				\ -- u1 c-addr2-1 u1-u3=u2+1
+    1 /string			\ -- u1 c-addr2 u2
+    rot drop USER-NAME		\ -- c-addr2 u2 c-addr3 u3
+    ;
+
+
+\ ******************************************************************************
+\    TRANSLATE-~ - gets the value of the TILDE_TRANSLATION environment variable
+\        and uses it as a C format string for formatting the final pathname from
+\        the GET or HEAD request.
+\
+\        Examples of the TILDE_TRANSLATION format string:
+\            UNIX: /home/%s/public_html/%s
+\            Nintendo: %0.0s/public_html/%s
+\
+\        The first "%s" in the format string is replaced by the user name
+\        (c-addr2/u2).  (If the first "%s" is really "%0.0s", as in the
+\        Nintendo example, the user name is discarded and the "%0.0s" is
+\        replaced by "".)  The second "%s" in the format string is replaced
+\        by the path (c-addr1/u1).
+\
+\        The fully formatted pathname is stored in a dynamically allocated
+\        string and returned on the stack as c-addr3/u3.
+\ ******************************************************************************
+
+: translate-~		( c-addr1 u1 c-addr2 u2 -- c-addr3 u3 )
+    { 2:PATH-NAME 2:USER-NAME }
+    s" TILDE_TRANSLATION" getenv
+    ?dup 0= IF			\ TILDE_TRANSLATION not defined?  Use default.
+        s" /home/%s/public_html/%s"
+    THEN
+				\ Determine length of formatted pathname ...
+    dup PATH-NAME nip USER-NAME nip + +
+    32 + strndup		\ Copy format string with extra space.
+    s" %0.0s" strdup 2>r	\ Save dynamically allocated "%0.0s".
+    2r@ search IF
+        2r@ s" " s///		\ Replace "%0.0s" with "".
+    ELSE
+        s" %s" USER-NAME s///	\ Replace "%s" with user name.
+    THEN
+    drop 2r> drop free drop	\ Restore and free allocated "%0.0s".
+    s" %s" PATH-NAME s/// drop	\ Replace "%s" with path name.
+    ;
+
+
+\ ******************************************************************************
+\    APPEND-/ - checks to see if a pathname without a trailing "/" refers to a
+\        directory instead of a file.  In the former case, a "/" is appended to
+\        the pathname.  The caller is responsible for passing in a string large
+\        enough to be expanded by one character.
+\ ******************************************************************************
+
+: append-/		( c-addr u -- c-addr u|u+1 )
+    2dup c[]@ [char] / <> IF	\ No trailing "/" ...
+        2dup drs-directory? IF	\ ... and is directory?
+            s" /" strcat	\ Append "/".
+        THEN
+    THEN
+    ;
+
+
+\ ******************************************************************************
+\    CHECK-FOR-INDEX-HTML - checks to see if a directory has a default HTML
+\        file in it.  The possible file names, in order, are "index.html",
+\        "index.htm", "default.html", and "default.htm".  The input arguments,
+\        c-addr/u1, specify the pathname of the directory, ending with a "/".
+\        If one of the files is found, the directory name with the file name
+\        appended, c-addr/u2, is returned on the stack along with a true flag.
+\        If none of the files is found, the original directory name, c-addr/u1,
+\        is returned along with a false flag.
+\ ******************************************************************************
+
+: check-for-index-html		( c-addr u1 -- c-addr u1|u2 flag )
+    { 2:BASE-PATH }
+    BASE-PATH s" index.html" strcat
+    2dup file-status nip 0= IF true EXIT THEN 2drop
+    BASE-PATH s" index.htm" strcat
+    2dup file-status nip 0= IF true EXIT THEN 2drop
+    BASE-PATH s" default.html" strcat
+    2dup file-status nip 0= IF true EXIT THEN 2drop
+    BASE-PATH s" default.htm" strcat
+    2dup file-status nip 0= IF true EXIT THEN 2drop
+    BASE-PATH false
+    ;
+
+
+\ ******************************************************************************
+\    BUILD-PATHNAME - builds the full pathname for the file specified in an
+\        HTTP GET or HEAD request.
+\ ******************************************************************************
+
+: build-pathname	( c-addr1 u1 -- c-addr2 u2 )
+    dup 2 * strndup		\ Dynamically allocate a copy of the file name.
+    replace-%
+    2dup split-name-path
+    translate-~
+    2swap drop free drop	\ Free the copy of the file name.
+    append-/
+    2dup drs-directory? IF
+        check-for-index-html drop
+    THEN
+    ;
+
+\ ******************************************************************************
+\    HTTP Request Handling.
+\ ******************************************************************************
+
+
+\ ******************************************************************************
+\    HTTP-REQUEST? - returns true if a string is an HTTP request (GET, HEAD, or
+\        POST).
+\ ******************************************************************************
+
+: http-request?		( c-addr u -- flag )
+    getword-ws 2swap 2drop
+    2dup s" GET" compare 0= IF
+        2drop true
+    ELSE 2dup s" HEAD" compare 0= IF
+        2drop true
+    ELSE s" POST" compare 0= IF
+        true
+    ELSE
+        false
+    THEN THEN THEN
+    ;
+
+
+\ ******************************************************************************
+\    PARSE-REQUEST - parses a GET or HEAD HTTP request (c-addr1/u1) and
+\        returns the fully resolved pathname (c-addr2/u2) and the HTTP
+\        version string (c-addr3/u3).
+\ ******************************************************************************
+
+: parse-request		( c-addr1 u1 -- c-addr2 u2 c-add3 u3 )
+    getword-ws 2drop			\ GET or HEAD.
+    getword-ws build-pathname 2swap	\ Resolve pathname.
+    getword-ws 2swap 2drop		\ HTTP version string.
+    ;
+
+
+\ *******************************************************************************
+\    WRITE-STREAM - writes a string to a network stream.  Upon entry to the
+\        word, the string is immediately duplicated (to prevent S" shenanigans)
+\        and escape sequences translated to their charcter counterparts.  The
+\        resulting string is output to the network stream and then FREE'd.
+\ *******************************************************************************
+
+: write-stream		( c-addr u stream -- ior )
+    -rot strdup escaped		\ -- stream c-addr1 u1
+    over >r			\ Save allocated string.
+    rot 3 -1E0			\ -- c-addr1 u1 stream crlf timeout
+    lfn-putline			\ -- ior
+    r> free drop		\ Restore and free allocated string.
+    ;
+
+
+\ ******************************************************************************
+\    GENERATE-HEADER - generates the HTTP response header for a request.
+\        If the requested file exists, a 200 success code is returned to
+\        the client:
+\                    <version> 200
+\                    Content-type: <MIME type>
+\                    Content-length: <# of bytes>
+\        If the requested file doesn't exist, a 404 error code is returned
+\        to the client:
+\                    <version> 404 <pathname> <reason>
+\                    Content-length: 0
+\ ******************************************************************************
+
+s" <html><head><title>Error</title></head><body>Directory cannot be viewed.</p></body></html>"
+strcdup constant ERROR_403_HTML
+
+s" <html><head><title>Error</title></head><body>File not found.</p></body></html>"
+strcdup constant ERROR_404_HTML
+
+
+\ REPORT-ERROR - reports an HTTP error code (u).  The error header is written
+\    to the client's network stream (st), along with an HTML message (c-addr1)
+\    indicating the error.  A temporary response buffer (c-addr3) and the
+\    URI (c-addr2/u2) in question are supplied by the caller.
+
+: report-error			( c-addr1 c-addr2 u2 u st c-addr3 -- )
+    { STREAM RESPONSE }			\ -- c-addr1 c-addr2 u2 u
+    RESPONSE 0 s" HTTP/1.1 " strcat	\ -- c-addr1 c-addr2 u2 u c-addr3 u3
+    rot 0 <# #s #> strcat		\ -- c-addr1 c-addr2 u2 c-addr3 u3'
+    s"  " strcat 2swap strcat		\ -- c-addr1 c-addr3 u3''
+    STREAM write-stream drop		\ HTTP error code.
+    s" Content-type: text/html"		\ -- c-addr1 c-addr4 u4
+    STREAM write-stream drop		\ MIME type.
+    dup RESPONSE 0 s" Content-length: " strcat
+					\ c-addr1 --
+    rot count nip 2 + 0 <# #s #> strcat \ -- c-addr1 c-addr3 u3'
+    STREAM write-stream drop		\ Length of HTML error message.
+    s" "				\ -- c-addr1
+    STREAM write-stream drop		\ Blank line.
+    count				\ -- c-addr1 u1
+    STREAM write-stream drop		\ HTML error message.
+    ;
+
+
+\ GENERATE-HEADER-WRAPPED - generates an HTTP header; this word is "wrapped"
+\    by the GENERATE-HEADER word to ensure that the dynamically allocated
+\    response buffer is FREE'd in the event of an error.  GENERATE-HEADER
+\    is passed the response buffer (c-addr) and the client's session
+\    object (a-addr).  True or false is returned on the stack to indicate
+\    to the GET word whether or not the file transfer is to be performed.
+
+: generate-header-wrapped	( c-addr a-addr -- flag )
+    dup sobj-stream @ swap sobj-pathname@
+    { RESPONSE STREAM 2:PATHNAME }
+    false
+    PATHNAME drs-directory? IF
+        s" HTTP/1.0 200" STREAM write-stream IF EXIT THEN
+        s" Connection: close" STREAM write-stream IF EXIT THEN
+        s" Content-type: text/html" STREAM write-stream IF EXIT THEN
+        s" " STREAM write-stream IF EXIT THEN
+        drop true		\ Substitute true for false.
+    ELSE PATHNAME file-status nip 0= IF
+        s" HTTP/1.1 200" STREAM write-stream IF EXIT THEN
+        s" Connection: Keep-Alive" STREAM write-stream IF EXIT THEN
+        RESPONSE 0 s" Content-type: " strcat PATHNAME lookup-mime strcat
+        STREAM write-stream IF EXIT THEN
+        RESPONSE 0 s" Content-length: " strcat
+        PATHNAME r/o bin open-file drop
+        dup file-size drop rot close-file drop
+        <# #s #> strcat
+        STREAM write-stream IF EXIT THEN
+        s" " STREAM write-stream IF EXIT THEN
+        drop true		\ Substitute true for false.
+    ELSE
+        ERROR_404_HTML PATHNAME 404 STREAM RESPONSE report-error
+    THEN THEN
+    ;
+
+
+\ GENERATE-HEADER - is a user-called wrapper around the work-performing
+\    GENERATE-HEADER-WRAPPED.  GENERATE-HEADER dynamically allocates a
+\    response buffer to be used by GENERATE-HEADER-WRAPPED.  When
+\    GENERATE-HEADER-WRAPPED returns, whether in error or not, GENERATE-HEADER
+\    then FREEs the response buffer.  The client's session object (a-addr) is
+\    passed into GENERATE-HEADER; the transfer-file flag returned by
+\    GENERATE-HEADER-WRAPPED is returned as is.
+
+: generate-header		( a-addr -- flag )
+    dup >r sobj-pathname@
+    dup 32 + strndup drop dup		\ Allocate response string.
+    r>					\ -- c-addr c-addr a-addr
+    generate-header-wrapped
+    swap free drop			\ Free response string;
+    ;
+
+
+\ ******************************************************************************
+\    STRIP-DIRECTORY - strips the directory information from a pathname,
+\        leaving only the file name and extension.  The original pathname
+\        is returned if no directory separator is found.
+\ ******************************************************************************
+
+: strip-directory	( c-addr u -- c-addr1 u1)
+    2dup [char] / strrchr ?dup IF
+        1 /string		\ Directory information stripped.
+        2swap 2drop
+    THEN
+    ;
+
+
+\ ******************************************************************************
+\    LIST-DIRECTORY - lists the contents of a directory and writes the contents
+\        out to the client's network connection.  True is returned on the
+\        stack if the listing was completed successfully; false is returned
+\        in the event of a network error.
+\ ******************************************************************************
+
+\ SHOW-HEADER - generates the HTML header for a directory listing.
+
+: show-header		( session -- )
+    dup sobj-stream @
+    { SESSION STREAM }
+    s" <html><head><title>" STREAM write-stream IF EXIT THEN
+    SESSION sobj-pathname@ STREAM write-stream IF EXIT THEN
+    s" </title></head><body>" STREAM write-stream IF EXIT THEN
+    s" <h2>" STREAM write-stream IF EXIT THEN
+    SESSION sobj-pathname@ STREAM write-stream IF EXIT THEN
+    s" </h2>" STREAM write-stream IF EXIT THEN
+    s" <ul>" STREAM write-stream IF EXIT THEN
+    s" <li><strong><a href=\q..\q>Parent Directory</a></strong></li>" STREAM write-stream drop
+    ;
+
+
+\ SHOW-DIRECTORY - generates an HTML list item for a directory.
+
+: show-directory	( c-addr u stream -- )
+    { STREAM }
+    s" <li><a href=\q" STREAM write-stream IF EXIT THEN
+    2dup STREAM write-stream IF EXIT THEN
+    s" /\q><strong>" STREAM write-stream IF EXIT THEN
+    STREAM write-stream IF EXIT THEN
+    s" /</strong></a></li>" STREAM write-stream drop
+    ;
+
+
+\ SHOW-FILE - generates an HTML list item for a file.
+
+: show-file		( size c-addr u stream -- )
+    { STREAM }
+    rot >r			\ Save file size.
+				\ c-addr u
+    s" <li><a href=\q" STREAM write-stream IF EXIT THEN
+				\ c-addr u
+    2dup STREAM write-stream IF EXIT THEN
+    s" \q><code>" STREAM write-stream IF EXIT THEN
+				\ c-addr u
+    STREAM write-stream IF EXIT THEN
+    s" </code></a> &nbsp;&nbsp;<em>(" STREAM write-stream IF EXIT THEN
+    r> 1023 + 1024 / 0 <# #s #> STREAM write-stream IF EXIT THEN
+    s" K)</em></li>" STREAM write-stream drop
+    ;
+
+
+\ LIST-DIRECTORY - generates an HTML-formatted directory listing.
+
+: list-directory	( a-addr -- )
+    dup sobj-stream @
+    { SESSION STREAM }
+    SESSION show-header
+    SESSION sobj-pathname@ 2dup c[]@ [char] / = IF
+        dup 1+ strndup s" *" strcat
+    ELSE
+        dup 2 + strndup s" /*" strcat
+    THEN
+    2dup drs-create IF
+        drop free drop EXIT		\ Error creating directory scan.
+    ELSE
+        -rot drop free drop		\ c-addr u scan -- scan
+    THEN
+    dup drs-first
+    BEGIN
+        ?dup
+    WHILE
+					\ File size?
+        2dup r/o open-file 0= IF
+            dup file-size 2drop		\ c-addr u fileid -- c-addr u fileid size
+            swap close-file drop	\ -- c-addr u size
+        ELSE
+            drop 0			\ c-addr u fileid -- c-addr u size
+        THEN
+        -rot				\ -- size c-addr u
+					\ Directory?
+        2dup drs-directory? -rot	\ -- size flag c-addr u
+        strip-directory			\ -- size flag c-addr1 u1
+        rot IF
+            STREAM show-directory drop	\ size c-addr1 u1 --
+        ELSE
+            STREAM show-file		\ size c-addr1 u1 --
+        THEN
+
+        dup drs-next
+
+    REPEAT
+    drs-destroy drop
+    s" </ul>" STREAM write-stream drop
+    s" </body></html>" STREAM write-stream drop
+    -1 SESSION sobj-close !
+    ;
+
+
+\ ******************************************************************************
+\    TRANSFER-FILE - reads the contents of a file and writes the contents
+\        out to the client's network connection.  True is returned on the
+\        stack if the transfer was completed successfully; false is returned
+\        in the event of a network error.
+\ ******************************************************************************
+
+32 1024 * constant MAXBUF
+
+: transfer-file		( a-addr -- flag )
+    { SESSION }
+    SESSION sobj-pathname@ r/o bin open-file IF
+        drop false EXIT		\ Error opening file.
+    THEN
+    MAXBUF allocate drop	\ Allocate an input buffer.
+    { INBUF }
+    BEGIN
+        true over INBUF MAXBUF rot read-file drop ?dup
+    WHILE			\ Data read from file?
+        INBUF swap SESSION sobj-stream @ -1E0 lfn-write 0=
+    WHILE			\ Data written to network stream?
+        2drop
+    REPEAT 2drop false THEN
+    swap close-file drop	\ Close the file.
+    INBUF free drop		\ Free the input buffer.
+    ;
+
+
+\ ******************************************************************************
+\    GET - returns a file to the client.
+\ ******************************************************************************
+
+: GET			( a-addr -- )
+    { SESSION }
+    SESSION sobj-request@		\ -- c-addr u
+    parse-request			\ c-addr u -- caddr u1 caddr2 u2
+    strdup SESSION sobj-version!	\ -- caddr u1
+    strdup SESSION sobj-pathname!	\ --
+    SESSION generate-header		\ a-addr -- flag
+    IF
+        SESSION sobj-pathname@
+        drs-directory? IF
+            SESSION list-directory
+        ELSE
+            SESSION transfer-file drop
+        THEN
+    THEN
+    ;
+
+
+\ ******************************************************************************
+\    HEAD - returns file information to the client.
+\ ******************************************************************************
+
+: HEAD			( a-addr -- )
+    { SESSION }
+    SESSION sobj-request@
+    parse-request
+    strdup SESSION sobj-version!
+    strdup SESSION sobj-pathname!
+    SESSION generate-header
+    drop
+    ;
+
+
+\ ******************************************************************************
+\    KEEPALIVE-TIMEOUT-CB - is invoked by the I/O event dispatcher when no
+\        input has been received from a client after N seconds.  The network
+\        connection to the client is closed and the session is destroyed.
+\ ******************************************************************************
+
+: keepalive-timeout-cb	( cb c-addr n -- )
+    drop nip
+    0 over sobj-timeout-cb !
+    session-destroy
+    ;
+
+
+\ ******************************************************************************
+\    ADD-TIMEOUT-CB - registers a keepalive timeout callback.  If the timer
+\        expires before any further input is received from the client, the
+\        client connection is closed and the session destroyed.  If input
+\        is received before the timer expires, the timer is cancelled and,
+\        after the new request is processed, a new timer is created.
+\ ******************************************************************************
+
+60E0 fconstant KEEPALIVE-TIMEOUT
+
+: add-timeout-cb	( a-addr -- )
+    dup sobj-timeout-cb session-cancel-cb
+    >r KEEPALIVE-TIMEOUT		\ Timeout in seconds.
+    r@					\ Session object.
+    ['] keepalive-timeout-cb		\ Word to execute when timer expires.
+    over sobj-input-cb @ iox-dispatcher	\ I/O event dispatcher.
+    iox-after				\ Register timer callback.
+    r> sobj-timeout-cb !		\ Save callback handle in session object.
+    ;
+
+
+\ ******************************************************************************
+\    PROCESS-REQUEST - processes an HTTP request.
+\ ******************************************************************************
+
+: process-request	( a-addr -- )
+    dup					\ -- a-addr a-addr
+    dup sobj-request@			\ -- a-addr a-addr c-addr u
+    getword-ws 2swap 2drop		\ -- a-addr a-addr c-addr' u'
+    ?dup IF
+        evaluate			\ a-addr a-addr c-addr' u' -- a-addr
+        dup s" " rot sobj-request!	\ a-addr -- a-addr
+    ELSE
+        2drop				\ a-addr a-addr c-addr' -- a-addr
+    THEN
+    add-timeout-cb
+    ;
+
+\ ******************************************************************************
+\    ADD-INPUT - registers a network file descriptor as an input source with
+\        an I/O dispatcher.  When input is detected on the file descriptor,
+\        the dispatcher executes the specified word to handle the input.
+\ ******************************************************************************
+
+: add-input		( dp fd addr xt -- cb )
+    rot IOX_READ		\ dp fd addr xt -- dp addr xt fd 1
+    2swap			\ -- dp fd 1 addr xt
+    4 roll			\ -- fd 1 addr xt dp
+    iox-onio			\ fd 1 addr xt dp -- cb
+    ;
+
+
+\ ******************************************************************************
+\    READ-CLIENT - is invoked by the I/O dispatcher when an HTTP request is
+\        available to be read from a client.  As the request is read, the
+\        request information is stored in the client's session object.  When
+\        the request is complete, PROCESS-REQUEST is called to process the
+\        request.  If there is a read error or if the connection is closed
+\        by the client, the client's session object is destroyed.
+\ ******************************************************************************
+
+: read-client		( cb c-addr n -- )
+    drop nip				\ Save the session in a local variable.
+    { SESSION }
+    SESSION sobj-timeout-cb session-cancel-cb
+    SESSION sobj-stream @		\ Get the network stream.
+    BEGIN
+        dup lfn-readable?		\ Pending input on network connection?
+        SESSION sobj-close @ 0=		\ No explicit call for connection close?
+        logical-and
+    WHILE
+        dup -1E+0 lfn-getline		\ Read the next line of input.
+        0= IF
+            2dup http-request? IF	\ HTTP request (GET, HEAD, POST)?
+                2dup strdup
+                SESSION sobj-request!	\ Save the request in the session.
+            THEN
+            dup 0= IF			\ End of request (empty line)?
+                SESSION process-request
+            THEN
+        THEN
+        2drop
+    REPEAT
+    lfn-up? 0=				\ Network connection gone down?
+    SESSION sobj-close @		\ Explicit call for connection close?
+    logical-or IF
+        SESSION session-destroy		\ Close it and discard the session.
+    THEN
+    ;
+
+
+\ ******************************************************************************
+\    NEW-CLIENT - is invoked by the I/O dispatcher when a client is requesting
+\        a network connection to the server.  The connection request is
+\        accepted and the new client data connection is registered with the
+\        I/O dispatcher as an input source.  When data is received on the
+\        connection, the I/O dispatcher automatically invokes READ-CLIENT
+\        to read and process the data.
+\ ******************************************************************************
+
+: new-client		( cb c-addr n -- )
+    drop
+    -1E+0 tcp-answer drop		\ Answer the connection request.
+    s" " lfn-create drop		\ Create a LF-terminated network stream.
+    swap iox-dispatcher swap		\ cb st -- dp st
+    dup lfn-fd swap			\ -- dp fd st
+    session-create dup >r		\ Create a session for the client.
+    dup -rot sobj-stream !		\ dp fd st a-addr -- dp fd a-addr
+    ['] read-client			\ Word to execute on client input.
+    add-input				\ Register an input callback.
+    r> sobj-input-cb !			\ Save callback in session object.
+    ;
+
+
+\ ******************************************************************************
+\    NEW-LISTENER - creates a TCP/IP listening endpoint for HTTP connection
+\        requests.  If a port number is present on the data stack, HTTPD
+\        listens at that port; otherwise, it listens at default port 80.
+\        The listening endpoint is registered with the I/O dispatcher, after
+\        which NEW-CLIENT is invoked to handle incoming connection requests.
+\ ******************************************************************************
+
+: new-listener		( [n] dp -- dp )
+    depth 1 = IF 80 swap THEN		\ ( [n] dp -- n dp )
+    dup rot				\ ( n dp -- dp dp n )
+    s" Listening on port " type dup s>d <# #s #> type s"  ..." type cr
+    0 tcp-listen			\ ( dp dp n -- dp dp ep ior )
+    abort" Error creating listening socket!"
+    dup tcp-fd swap
+    ['] new-client			\ ( dp dp fd ep -- dp dp fd ep xt )
+    add-input drop			\ ( dp dp fd ep xt -- dp )
+    ;
+
+\ ******************************************************************************
+\    MAIN LOOP - Create an I/O dispatcher, create the server's listening port,
+\        and loop forever.
+\ ******************************************************************************
+
+0 iox-debug
+0 lfn-debug
+0 tcp-debug
+
+skt-startup abort" Unable to start up networking!\n"
+
+[DEFINED] G-DISPATCHER [IF]
+    G-DISPATCHER		\ (nicl) Use NICL's I/O dispatcher.
+[ELSE]
+    iox-create drop		\ (finc) Create an I/O dispatcher.
+[THEN]
+new-listener			\ Create the HTTP listening port.
+
+mime-types set-current		\ Load the MIME-type mappings.
+s" MIME_TYPES" getenv ?dup 0= [IF]
+    s" /etc/mime.types" strdup
+[THEN]
+read-mime-file
+definitions
+
+[DEFINED] G-DISPATCHER [IF]
+drop
+[ELSE]
+s" Monitoring ..." type cr
+-1E+0 iox-monitor		\ Monitor connection requests and client I/O.
+s" Done monitoring?" type cr	\ Shouldn't reach here!
+[THEN]

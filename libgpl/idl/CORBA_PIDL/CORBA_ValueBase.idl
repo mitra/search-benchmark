@@ -1,0 +1,8 @@
+// $Id: CORBA_ValueBase.idl,v 1.1 2003/05/29 00:14:02 alex Exp $
+// File: CORBA_ValueBase.idl
+// CORBA 3.0, Chapter 5
+
+    valuetype ValueBase{ //PIDL
+        ValueDef get_value_def();
+    };
+

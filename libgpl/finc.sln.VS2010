@@ -1,0 +1,31 @@
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libfinc", "finc\libfinc.vcxproj", "{CCE4E980-FB53-7BFC-B4F0-913BF0F45F21}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "finc", "finc\finc.vcxproj", "{A433B0BC-3973-CC46-816D-1B98FFA290FD}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nicl", "finc\nicl.vcxproj", "{E26A5979-662B-AD1A-84D9-334CF1EB97C1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CCE4E980-FB53-7BFC-B4F0-913BF0F45F21}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CCE4E980-FB53-7BFC-B4F0-913BF0F45F21}.Debug|Win32.Build.0 = Debug|Win32
+		{CCE4E980-FB53-7BFC-B4F0-913BF0F45F21}.Release|Win32.ActiveCfg = Release|Win32
+		{CCE4E980-FB53-7BFC-B4F0-913BF0F45F21}.Release|Win32.Build.0 = Release|Win32
+		{A433B0BC-3973-CC46-816D-1B98FFA290FD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A433B0BC-3973-CC46-816D-1B98FFA290FD}.Debug|Win32.Build.0 = Debug|Win32
+		{A433B0BC-3973-CC46-816D-1B98FFA290FD}.Release|Win32.ActiveCfg = Release|Win32
+		{A433B0BC-3973-CC46-816D-1B98FFA290FD}.Release|Win32.Build.0 = Release|Win32
+		{E26A5979-662B-AD1A-84D9-334CF1EB97C1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E26A5979-662B-AD1A-84D9-334CF1EB97C1}.Debug|Win32.Build.0 = Debug|Win32
+		{E26A5979-662B-AD1A-84D9-334CF1EB97C1}.Release|Win32.ActiveCfg = Release|Win32
+		{E26A5979-662B-AD1A-84D9-334CF1EB97C1}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

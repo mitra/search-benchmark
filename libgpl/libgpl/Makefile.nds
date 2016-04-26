@@ -1,0 +1,112 @@
+# $Id: Makefile.nds,v 1.3 2011/07/18 17:34:58 alex Exp alex $
+#
+
+LIBRARY = libgpl
+
+SRCS =	\
+	aperror.c \
+	bio_util.c \
+	bit_util.c \
+	bmw_util.c \
+	coli_util.c \
+	comx_util.c \
+	cosn_util.c \
+	crlf_util.c \
+	damx_util.c \
+	ddmx_util.c \
+	drs_util.c \
+	f1750a_util.c \
+	ffs.c \
+	fnm_util.c \
+	ftw_util.c \
+	get_util.c \
+	gimx_util.c \
+	gsc_util.c \
+	hash_util.c \
+	id3_util.c \
+	ieee_util.c \
+	iiop_util.c \
+	info_util.c \
+	iox_util.c \
+	lemx_util.c \
+	lfn_util.c \
+	list_util.c \
+	log_util.c \
+	meo_util.c \
+	net_util.c \
+	nft_proc.c \
+	nft_util.c \
+	nvl_util.c \
+	nvp_util.c \
+	opt_util.c \
+	port_util.c \
+	rex_util.c \
+	rex_util_y.c \
+	skt_util.c \
+	str_util.c \
+	tcp_util.c \
+	tpl_util.c \
+	tv_util.c \
+	udp_util.c \
+	utf_util.c \
+	vim_util.c \
+	wcs_util.c \
+	xnet_util.c \
+
+#	bomx_util.c \
+#	dae_util.c \
+#	msq_util.c \
+#	nob_util.c \
+#	sem_util.c \
+#	shm_util.c \
+#	ts_util.c \
+#	xqt_util.c
+
+OBJS = $(SRCS:.c=.o)
+
+#*******************************************************************************
+#    Define the ARM-specific compilation tools to be used.  (Most NDS
+#    developers include devkitPro's "base_rules" and "ds_rules" for these
+#    definitions and for the suffix rules, but these files were written
+#    without following the conventions used in Make's implicit rules.
+#    The implicit rules work just fine for C and C++ files.)
+#PREFIX	=	arm-eabi-
+PREFIX	=	arm-none-eabi-
+AR	=	$(PREFIX)ar
+CC	=	$(PREFIX)gcc
+RANLIB	=	$(PREFIX)ranlib
+#*******************************************************************************
+
+ROOT = ..
+
+CPPFLAGS := \
+	-DNDS \
+	-DARM9 \
+	-I. \
+	-I$(ROOT)/include \
+	-I$(DEVKITPRO)/libnds/include
+
+CFLAGS := \
+	-g -Wall -O2 \
+	-ffast-math -fomit-frame-pointer \
+	-march=armv5te -mtune=arm946e-s \
+	-mthumb -mthumb-interwork
+
+ARFLAGS = rv
+
+all::	$(LIBRARY).a
+
+$(LIBRARY).a: $(OBJS)
+	$(RM) $@
+	$(AR) $(ARFLAGS) $@ $(OBJS)
+	$(RANLIB) $@
+
+rex_util_y.c:  rex_util_y.y
+	$(YACC) $(YACCFLAGS) rex_util_y.y
+	$(RM) $@
+	sed -e 's/extern char \*malloc(), \*realloc();//' \
+            -e 's/yy/rr/g' -e 's/YY/RR/g'  y.tab.c  > $@
+	$(RM) y.tab.c y.tab.h
+
+clean::
+	-$(RM) $(OBJS) $(LIBRARY).a

@@ -1,0 +1,96 @@
+// $Id: DAFDescriptions.idl,v 1.1 2003/05/29 00:26:31 alex Exp $
+//File: DAFDescriptions.idl
+#ifndef _DAF_DESCRIPTIONS_IDL_
+#define _DAF_DESCRIPTIONS_IDL_
+
+#include <DAFIdentifiers.idl>
+#include <TimeBase.idl>
+
+#pragma prefix "omg.org"
+module DAFDescriptions
+{
+	//++
+	// Simple Types used as property values.
+	//--
+
+	// imported from identifiers module.
+	typedef DAFIdentifiers::ResourceID ResourceID;
+	typedef DAFIdentifiers::URI URI;
+
+	// absolute time stamps in 100 nanosecond units 
+	// base time is 15 October 1582 00:00 UTC
+	// as per Time Service specification
+	typedef TimeBase::TimeT DateTime;
+
+	// a complex number
+	struct Complex
+	{
+		double real;
+		double imaginary;
+	};
+
+	// SimpleValue's can take on the following types.
+	typedef short SimpleValueType;
+	const SimpleValueType RESOURCE_TYPE = 1;
+	const SimpleValueType URI_TYPE = 2;
+	const SimpleValueType STRING_TYPE = 3;
+	const SimpleValueType BOOLEAN_TYPE = 4;
+	const SimpleValueType INT_TYPE = 5;
+	const SimpleValueType UNSIGNED_TYPE = 6;
+	const SimpleValueType DOUBLE_TYPE = 7;
+	const SimpleValueType COMPLEX_TYPE = 8;
+	const SimpleValueType DATE_TIME_TYPE = 9;
+	const SimpleValueType ULONG_LONG_TYPE = 10;
+
+	// a SimpleValue is the object of a resource description.
+	union SimpleValue switch( SimpleValueType )
+	{
+		case RESOURCE_TYPE  : ResourceID resource_value;
+		case URI_TYPE       : URI uri_value;
+		case STRING_TYPE    : string string_value;
+		case BOOLEAN_TYPE   : boolean boolean_value;
+		case INT_TYPE       : long int_value;
+		case UNSIGNED_TYPE  : unsigned long unsigned_value;
+		case DOUBLE_TYPE    : double double_value;
+		case COMPLEX_TYPE   : Complex complex_value;
+		case DATE_TIME_TYPE : DateTime date_time_value;
+		case ULONG_LONG_TYPE: unsigned long long ulong_long_value;
+	};
+
+	//++
+	// Resource Descriptions
+	//--
+
+	// properties are represented by their resource identifiers
+	typedef ResourceID PropertyID;
+	// predicate and object for a resource description
+	struct PropertyValue
+	{
+		PropertyID property;
+		SimpleValue value;
+	};
+	typedef sequence<PropertyValue> PropertyValueSequence;
+
+	// resource description with one subject, multiple predicates
+	struct ResourceDescription 
+	{
+		ResourceID id;
+		PropertyValueSequence values;
+	};
+	typedef sequence<ResourceDescription> ResourceDescriptionSequence;
+
+	// iterator for handling large numbers of resource descriptions
+	interface ResourceDescriptionIterator
+	{
+		unsigned long max_left();
+		boolean next_n( 
+			in unsigned long n,
+			out ResourceDescriptionSequence descriptions );
+		void destroy();
+	};
+};
+
+#endif // _DAF_DESCRIPTIONS_IDL_
+	
+
+

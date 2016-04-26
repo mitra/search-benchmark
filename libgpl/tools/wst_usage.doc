@@ -1,0 +1,61 @@
+;*******************************************************************************
+;  @(#)  FILE: wst_usage.doc  RELEASE: 1.2  DATE: 5/9/90, 16:37:52
+;*******************************************************************************
+;
+;    wst_usage.doc
+;
+;    This file simply illustrates the capabilities of the WST program.  To
+;    print this file out, simply run it through WST and pipe the result to
+;    the appropriate laser printer (i.e., one supported by WST):
+;
+;                     % wst wst_usage.doc | lpr -Plpp
+;
+;*******************************************************************************
+
+
+
+   
+
+                   Wordstar             Laser Printer 
+     ctrl-B        Bold                 Bold
+     ctrl-D        Double-strike        Double underline
+     ctrl-E                             Expanded characters (horiz./vert.)
+     ctrl-Q                             Shaded characters
+     ctrl-R                             Reverse video
+     ctrl-S        Underline            Single underline
+     ctrl-T        Superscript          Tall characters (vert.)
+     ctrl-V        Subscript            Shaded box
+     ctrl-W                             Wide characters (horiz.)
+     ctrl-X        Strikeout            Lined box
+     ctrl-Y        Italics              Italics
+            
+                                                                           
+
+
+            Bold Characters
+
+            Double Underline
+
+
+            Expanded Characters
+
+            Shaded Characters
+
+            Reverse Characters
+
+            Single Underline
+
+
+            Tall Characters
+
+            
+             Shaded Box
+                        
+
+            Wide Characters
+
+            
+             Lined Box
+                       
+
+            Italicized Characters

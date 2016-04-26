@@ -1,0 +1,7 @@
+// $Id: CORBA_Current.idl,v 1.1 2003/05/29 00:13:05 alex Exp $
+// File: CORBA_Current.idl
+// CORBA 3.0, Chapter 4
+
+    // interface for the Current object
+    local interface Current {
+    };

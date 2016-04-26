@@ -1,0 +1,96 @@
+#
+# %Z%  FILE: %M%  RELEASE: %I%  DATE: %G%, %U%
+#
+# Makefile
+#
+
+#PROGRAMS = dirtree dump events_reader ffc fifo maple molox netecho \
+#	   prosper rdate rename rpm sdp shifty syncsrc talknet wst yip
+
+PROGRAMS = dump netecho rpm talknet wst
+
+ARCH = hp
+TPOCC_DIR = /folks/alexm/obj/$(ARCH)
+TPOCC_LIB = /folks/alexm/obj/$(ARCH)/lib
+INCLUDE_DIR = $(TPOCC_DIR)/include
+LIBS = \
+	$(TPOCC_LIB)/liblzp/liblzp.a \
+	-lm -lc
+
+INSTALL_DIR = $(HOME)/local/bin/$(ARCH)
+
+CC = cc
+CFLAGS = -g
+CPPFLAGS = -D_HPUX_SOURCE=1 -I. -I$(INCLUDE_DIR)
+LD = ld
+LDFLAGS =
+LINK.c = cc
+RM = rm -f
+
+.KEEP_STATE:
+
+all::	$(PROGRAMS)
+
+dirtree:  dirtree.o
+	$(LINK.c) $(LDFLAGS) dirtree.o $(LIBS) -o $@
+
+dump:  dump.o
+	$(LINK.c) $(LDFLAGS) dump.o $(LIBS) -o $@
+
+events_reader:  events_reader.o
+	$(LINK.c) $(LDFLAGS) events_reader.o $(LIBS) -o $@
+
+ffc:  ffc.o
+	$(LINK.c) $(LDFLAGS) ffc.o $(LIBS) -o $@
+
+fifo:  fifo.o
+	$(LINK.c) $(LDFLAGS) fifo.o $(LIBS) -o $@
+
+maple:  maple.o
+	$(LINK.c) $(LDFLAGS) maple.o $(LIBS) -o $@
+
+molox:  molox.o
+	$(LINK.c) $(LDFLAGS) molox.o $(LIBS) -o $@
+
+netecho:  netecho.o
+	$(LINK.c) $(LDFLAGS) netecho.o $(LIBS) -o $@
+
+prosper:  prosper.o
+	$(LINK.c) $(LDFLAGS) prosper.o $(LIBS) -o $@
+
+rename:  rename.o
+	$(LINK.c) $(LDFLAGS) rename.o $(LIBS) -o $@
+
+rdate:  rdate.o
+	$(LINK.c) $(LDFLAGS) rdate.o $(LIBS) -o $@
+
+rpm:  rpm.o
+	$(LINK.c) $(LDFLAGS) rpm.o $(LIBS) -o $@
+
+sdp:  sdp.o
+	$(LINK.c) $(LDFLAGS) sdp.o $(LIBS) -lcurses -ltermcap -o $@
+
+shifty:  shifty.o
+	$(LINK.c) $(LDFLAGS) shifty.o $(LIBS) -o $@
+
+syncsrc:  syncsrc.o
+	$(LINK.c) $(LDFLAGS) syncsrc.o $(LIBS) -o $@
+
+talknet:  talknet.o
+	$(LINK.c) $(LDFLAGS) talknet.o $(LIBS) -o $@
+
+wst:  wst.o
+	$(LINK.c) $(LDFLAGS) wst.o $(LIBS) -o $@
+
+yip:  yip.o
+	$(LINK.c) $(LDFLAGS) yip.o $(LIBS) -o $@
+
+.c.o:
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $<
+
+clean::
+	-$(RM) $(PROGRAMS)
+	-$(RM) *.o
+
+install:
+	cp $(PROGRAMS) $(INSTALL_DIR)

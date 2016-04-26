@@ -1,0 +1,31 @@
+# Microsoft Developer Studio Generated Dependency File, included by libxdr.mak
+
+.\xdr.c : \
+	"..\..\program files\microsoft visual studio\vc98\include\basetsd.h"\
+	"..\include\rpc\xdr.h"\
+	
+
+.\xdr_array.c : \
+	"..\..\program files\microsoft visual studio\vc98\include\basetsd.h"\
+	"..\include\rpc\xdr.h"\
+	
+
+.\xdr_float.c : \
+	"..\..\program files\microsoft visual studio\vc98\include\basetsd.h"\
+	"..\include\rpc\xdr.h"\
+	
+
+.\xdr_mem.c : \
+	"..\..\program files\microsoft visual studio\vc98\include\basetsd.h"\
+	"..\include\rpc\xdr.h"\
+	
+
+.\xdr_rec.c : \
+	"..\..\program files\microsoft visual studio\vc98\include\basetsd.h"\
+	"..\include\rpc\xdr.h"\
+	
+
+.\xdr_reference.c : \
+	"..\..\program files\microsoft visual studio\vc98\include\basetsd.h"\
+	"..\include\rpc\xdr.h"\
+	

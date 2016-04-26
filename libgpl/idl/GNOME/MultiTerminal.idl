@@ -1,0 +1,13 @@
+
+#include <gnome-factory.idl>
+
+module GNOME {
+	module MultiTerminal {
+		interface MultiTerminal {
+		};
+
+		interface MultiTerminalFactory : GenericFactory {
+			MultiTerminal create_terminal (in string geometry);
+		};
+	};
+};

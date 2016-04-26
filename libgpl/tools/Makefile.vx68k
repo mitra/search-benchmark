@@ -1,0 +1,71 @@
+#
+#  %Z%  FILE: %M%  RELEASE: %I%  DATE: %G%, %U%
+#
+# Makefile
+#
+
+PROGRAMS = dump maple nerd netecho netmet rdate rpm talknet
+
+ARCH = vx
+CPU = MC68040
+ROOT = ..
+LIB_DIR = $(ROOT)/lib
+VXWORKS = /vxworks/links/os
+INCLUDE_DIR = $(ROOT)/include
+LIBS = \
+	$(LIB_DIR)/libgpl/libgpl.a \
+	-L$(VXWORKS)/lib
+
+CC = cc68k
+CFLAGS = -O -ansi -pedantic -Wall -nostdlib
+CPPFLAGS = \
+	-DCPU=$(CPU) \
+	-DVXWORKS=1 \
+	-nostdinc \
+	-I. \
+	-I$(INCLUDE_DIR) \
+	-I$(INCLUDE_DIR)/vx \
+	-I$(VXWORKS)/h
+
+LD = ld68k
+LDFLAGS = -r
+
+.KEEP_STATE:
+
+all::	$(PROGRAMS)
+
+.c.o:
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $<
+
+dump:  dump.o
+	$(LD) $(LDFLAGS) dump.o $(LIBS) -o $@
+
+maple:  maple.o
+	$(LD) $(LDFLAGS) maple.o $(LIBS) -o $@
+
+nerd:  nerd.o
+	$(LD) $(LDFLAGS) nerd.o $(LIBS) -o $@
+
+netmet:  netmet.o
+	$(LD) $(LDFLAGS) netmet.o $(LIBS) -o $@
+
+netecho:  netecho.o
+	$(LD) $(LDFLAGS) netecho.o $(LIBS) -o $@
+
+rdate:  rdate.o
+	$(LD) $(LDFLAGS) rdate.o $(LIBS) -o $@
+
+rpm:  rpm.o
+	$(LD) $(LDFLAGS) rpm.o $(LIBS) -o $@
+
+talknet:  talknet.o
+	$(LD) $(LDFLAGS) talknet.o $(LIBS) -o $@
+
+test:  test.o
+	$(LD) $(LDFLAGS) test.o $(LIBS) -o $@
+
+clean:
+	-$(RM) $(PROGRAMS) *.o
+
+install:
+	cp $(PROGRAMS) $(INSTALL_DIR)

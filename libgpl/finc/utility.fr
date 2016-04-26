@@ -1,0 +1,1117 @@
+\ $Id: utility.fr,v 1.4 2009/09/08 09:37:09 alex Exp alex $
+\ ******************************************************************************
+\
+\    Miscellaneous Utilities.
+\
+\
+\    A number of the string words were inspired by or copied from similar words
+\    written by Wil Baden:
+\                  http://home.earthlink.net/~neilbawd/
+\    and Leo Wong:
+\             http://mysite.verizon.net/murphywong/forth.htm
+\
+\
+\    FICL Deficiencies:
+\
+\    defined? - return true if word is defined and false otherwise.
+\    [defined] - return true if word is defined.
+\    [undefined] - return true if word is undefined.
+\    [ifdef] - begin IF block if word is defined.
+\    [ifundef] - begin IF block if word is undefined.
+\    -trailing - trim trailing blanks from a string.
+\    blank - fill a string with blanks.
+\    cmove - copy a string from one area to a non-overlapping area.
+\    cmove> - copy a string from one area to an overlapping area.
+\    file-position - return the current position in a file.
+\    file-size - return the size of a file.
+\    pick - pick the Nth item in the stack.
+\    /string - adjust the starting address of a string.
+\    search - search for a substring within a string.
+\
+\    Structures
+\
+\    begin-structure - start a structure definition.
+\    +field - define a field in a structure.
+\    end-structure - end a structure definition.
+\    field: - define a 1-cell field in a structure.
+\    dfield: - define a 2-cell field in a structure.
+\    sfield: - define a 2-cell string field in a structure.
+\
+\    Logical Operations:
+\
+\    logical-and - return the logical AND of two conditions.
+\    logical-or - return the logical OR of two conditions.
+\    logical-not - return the logical negation of a condition.
+\
+\    Storing and Retrieving Characters:
+\
+\    c[]@ - retrieve the Ith character from an array.
+\    c[]! - store a character at the Ith position in an array.
+\    c@++ - retrieve a character and increment its address.
+\    c!++ - store a character and increment its address.
+\
+\    String Manipulation Words:
+\
+\    place - store the counted representation of a string.
+\    strcat - append one string to another.
+\    strcdup - duplicate a string in its counted representation form.
+\    strdup - duplicate a string in its normal form (address/length).
+\    strndup - duplicate a string into a buffer of a possibly different length.
+\    str-insert - insert a string into another string.
+\    str-remove - remove part of a string.
+\    string, - compile a string into the dictionary.
+\    s/// - search for and replace the first occurrence of a substring.
+\    s///g - search for and replace all occurrences of a substring.
+\
+\    Escaped Strings:
+\
+\    hex2char - convert a 2-character hexadecimal value to a character.
+\    escape-sequence? - checks if an escape sequence has been encountered.
+\    escape-char - returns the escaped character in an escape sequence.
+\    escaped - return a string with escaped characters resolved.
+\
+\    Searching Strings:
+\
+\    strchr - scan a string for a character.
+\    strrchr - reverse scan a string for a character.
+\
+\    Scanning Whitespace:
+\
+\    whitespace? - determine if a character is whitespace or not.
+\    cspan-ws - skip leading non-whitespace characters in a string.
+\    span-ws - skip leading whitespace characters in a string.
+\    rcspan-ws - skip trailing non-whitespace characters in a string.
+\    rspan-ws - skip trailing whitespace characters in a string.
+\    -leading-ws - trim leading whitespace from a string.
+\    -trailing-ws - trim trailing whitespace from a string.
+\    squeeze-ws - trim leading and trailing whitespace from a string.
+\    getword-ws - get a whitespace-delimited word from a string.
+\
+\    Scanning Arbitrary Character Sets:
+\
+\    cspan-any - span the complement of a set of characters at the beginning
+\        of a string.
+\    span-any - span a set of characters at the beginning of a string.
+\    rcspan-any - span the complement of a set of characters at the end of a
+\        string.
+\    rspan-any - span a set of characters at the end of a string.
+\    -leading-any - trim leading set of characters from a string.
+\    -trailing-any - trim trailing set of characters from a string.
+\    squeeze-any - trim leading and trailing set of characters from a string.
+\    getword-any - get an arbitrarily delimited word from a string.
+\
+\ ******************************************************************************
+
+
+s" loading utility.fr" type cr
+
+
+\ ******************************************************************************
+\    FICL Deficiencies - missing or incorrectly implemented ANS Forth words.
+\ ******************************************************************************
+
+true constant FICL
+
+FICL [IF]
+
+
+\ ******************************************************************************
+\ Conditional Compilation words.
+\ ******************************************************************************
+
+\    defined? <text>
+
+: defined?		( -- flag )
+    bl word find nip 0<>
+    ;
+
+
+\    [DEFINED] <text>
+
+: [DEFINED]		( -- flag )
+    defined?
+    ; immediate
+
+
+\    [UNDEFINED] <text>
+
+: [UNDEFINED]		( -- flag )
+    defined? 0=
+    ; immediate
+
+
+\    [IFDEF] <text> ... [THEN]
+
+: [IFDEF]		( -- )
+    defined? postpone [IF]
+    ; immediate
+
+
+\    [IFUNDEF] <text> ... [THEN]
+
+: [IFUNDEF]		( -- )
+    defined? 0= postpone [IF]
+    ; immediate
+
+
+\ ******************************************************************************
+\ -TRAILING - trims trailing blanks from a string.
+\ ******************************************************************************
+
+: -TRAILING		( c-addr u1 -- c-addr u2 )
+    dup 0 swap ?DO
+        over I 1- chars + c@	\ Retrieve last character in string.
+        bl <> IF LEAVE THEN	\ Exit loop if character is not blank.
+        1-			\ Decrement string length.
+    -1 +LOOP
+    ;
+
+
+\ ******************************************************************************
+\ BLANK - fills a string with blanks.  This word is part of the String
+\    extensions, which FICL doesn't provide.
+\ ******************************************************************************
+
+: BLANK			( c-addr u -- )
+    1+ 1 ?DO
+        BL over I 1- char+ c!
+    LOOP
+    drop
+    ;
+
+
+\ ******************************************************************************
+\ CMOVE - copies a string from one area (c-addr1) to another, non-overlapping
+\    area (c-addr2).  This word is part of the String extensions, which FICL
+\    doesn't provide.
+\ ******************************************************************************
+
+: CMOVE			( c-addr1 c-addr2 u -- )
+    chars move
+    ;
+
+
+\ ******************************************************************************
+\ CMOVE> - copies a string from one area (c-addr1) to another overlapping
+\    area (c-addr2).  This word is part of the String extensions, which FICL
+\    doesn't provide.  CMOVE> is defined identically to CMOVE because FICL's
+\    implementation of MOVE handles overlapping copies correctly.
+\ ******************************************************************************
+
+: CMOVE>		( c-addr1 c-addr2 u -- )
+    chars move
+    ;
+
+
+\ ******************************************************************************
+\ FILE-POSITION - returns the current position in an open file.  The ANS
+\    standard specifies that the position is returned as a double-cell
+\    unsigned number.  However, FICL returns a single-cell number.
+\ ******************************************************************************
+
+: FILE-POSITION		( fileid -- ud ior )
+    file-position		\ Use Ficl's built-in FILE-POSITION.
+    0 swap			\ Upper cell of position = 0.
+    ;
+
+
+\ ******************************************************************************
+\ FILE-SIZE - returns the size of an open file.  The ANS standard specifies
+\    that the size is returned as a double-cell unsigned number.  However,
+\    FICL returns a single-cell number.
+\ ******************************************************************************
+
+: FILE-SIZE		( fileid -- ud ior )
+    file-size			\ Use Ficl's built-in FILE-SIZE.
+    0 swap			\ Upper cell of size = 0.
+    ;
+
+
+\ ******************************************************************************
+\ PICK - picks the 0..Nth item from the stack.  Unlike the ANS standard,
+\    FICL's built-in PICK treats the first item as the 1st item rather
+\    than the 0th item.
+\ ******************************************************************************
+
+: PICK			( xu ... x1 x0 u -- xu ... x1 x0 xu )
+    1+ pick			\ Use Ficl's built-in PICK.
+    ;
+
+
+\ ******************************************************************************
+\ /STRING - adjusts the starting address and length of a string.  This word is
+\    part of the String extensions, which FICL doesn't provide.  NOTE that the
+\    adjustment count, N, can be negative to include characters preceding the
+\    input string, thereby lengthening the string.
+\ ******************************************************************************
+
+: /STRING		( c-addr1 u1 n -- c-addr2 u2 )
+    2dup < IF				\ N out of bounds?.
+        drop dup			\ Set N = u1; return zero-length string.
+    THEN
+    rot over chars + -rot -		\ Return adjusted string.
+    ;
+
+
+\ ******************************************************************************
+\ SEARCH - searches for a substring (c-addr2/u2) within a string (c-addr1/u1)
+\    and, if found, returns the remainder of the string beginning at the
+\    substring (c-addr3/u3) and a true flag.  If the substring is not found,
+\    the original string (c-addr1/u1) and a false flag are returned.  This
+\    word is part of the String extensions, which FICL doesn't provide.
+\ ******************************************************************************
+
+: SEARCH		( c-addr1 u1 c-addr2 u2 -- c-addr3 u3 flag )
+    2 pick 0= IF
+        2drop false EXIT	\ Length of string to search is 0 - exit.
+    THEN
+    dup 1 4 pick 1+ within 0= IF
+        2drop false EXIT	\ Substring length is out of bounds - exit.
+    THEN
+    2swap			\ -- c-addr2 u2 c-addr1 u1
+    2dup 2>r			\ Save original string, c-addr1/u1.
+    false			\ Substring not found yet.
+    over 4 pick - 2 + 1 DO	\ For I = 1 to u1-u2+1 ...
+        drop			\ ... the flag.
+        2over 2over drop over	\ -- c-addr2 u2 c-addr' u' c-addr2 u2 c-addr' u2
+        compare 0= IF true LEAVE THEN
+        1 /string false		\ -- c-addr2 u2 c-addr'+1 u'-1 flag
+    LOOP
+    2r>				\ Restore original string, c-addr1/u1.
+    rot IF
+        2drop 2swap 2drop	\ Substring found; return remaining string.
+        true
+    ELSE
+        2swap 2drop 2swap 2drop	\ Substring not found; return original string.
+        false
+    THEN
+    ;
+
+
+[THEN]
+
+\ ******************************************************************************
+\    This is a partial implementation of the Stephen Pelc's proposed Forth200x
+\    structure words (using the reference implementation).  The proposal can be
+\    found at:
+\                http://www.forth200x.org/structures.html
+\    FICL doesn't fully implement the Floating-Point word set - especially the
+\    floating-point alignment words - so floating-point fields are not defined.
+\ ******************************************************************************
+
+
+\ begin-structure - starts a structure definition identified by the following
+\    name.
+
+: begin-structure
+    CREATE		( -- addr 0 )
+        here 0 0 ,		\ Initialize structure size to 0.
+    DOES>		( -- n )
+        @			\ Return structure size.
+    ;
+
+
+\ +field: - defines a field in a structure.
+
+: +field
+    CREATE		( offset n -- offset+n )
+        over , +		\ Save field offset; return next field's offset.
+    DOES>		( a-addr -- a-addr+offset )
+        @ +			\ Return base address plus field offset.
+    ;
+
+
+\ end-structure - ends a structure definition and stores the structure size
+\    at the dictionary address generated by begin-structure.
+
+: end-structure		( addr n -- )
+    swap !
+    ;
+
+
+\ field: - defines a 1-cell field in a structure.
+
+: field:		( offset -- offset+n)
+    aligned 1 cells +field
+    ;
+
+
+\ dfield: - defines a 2-cell field in a structure.  (Proposed by David N.
+\    Williams.)
+
+: dfield:		( offset -- offset+n)
+    aligned 2 cells +field
+    ;
+
+
+\ sfield: - defines a 2-cell string field in a structure.  (Proposed by David
+\    N. Williams.)
+
+: sfield:		( offset -- offset+n)
+    aligned 2 cells +field
+    ;
+
+\ ******************************************************************************
+\    The logical operations convert zero/non-zero condition flags to their
+\    canonical false/true form and perform the logical operations specified.
+\    The resulting flags are in canonical false/true form.  Bit-wise
+\    operations with the non-canonical forms are not guaranteed to give the
+\    expected answers.  For example, the bit-wise AND of two non-zero flags
+\    (both considered true) may produce zero (false).  Likewise, INVERTing
+\    a non-zero flag (true) may produce another non-zero flag (true).  The
+\    logical-or word is included for completeness.
+\ ******************************************************************************
+
+
+\ logical-and - returns the logical AND of two conditions.
+
+: logical-and	( flag1 flag2 -- flag )
+    0<> swap 0<> and
+    ;
+
+
+\ logical-or - returns the logical OR of two conditions.
+
+: logical-or	( flag1 flag2 -- flag )
+    0<> swap 0<> or
+    ;
+
+
+\ logical-not - returns the logical negation of a condition.
+
+: logical-not	( flag1 -- flag )
+    IF false ELSE true THEN
+    ;
+
+\ ******************************************************************************
+\    Storing and retrieving characters.  The C[]@ and C[]! words access
+\    characters in character arrays; array indices are one-based (i.e., 1..N),
+\    not zero-based.  The post-increment words, C@++ and C!++, were borrowed
+\    from Wil Baden's "Common Values and Operations":
+\             http://home.earthlink.net/~neilbawd/common.txt
+\ ******************************************************************************
+
+
+\ c[]@ - retrieves the character from array[i], where i is in the range, 1..N.
+\    Zero (0) is returned in the case of an invalid array reference.
+
+: c[]@		( c-addr n -- c )
+    1- dup 0< IF
+        2drop 0
+    ELSE
+        chars + c@
+    THEN
+    ;
+
+
+\ c[]! - stores a character in array[i], where i is in the range, 1..N.
+
+: c[]!		( char c-addr n -- )
+    1- dup 0< IF
+        2drop drop
+    ELSE
+        chars + c!
+    THEN
+    ;
+
+
+\ c@++ - retrieve a character and increment its address.
+
+: c@++		( c-addr -- c-addr+1 char )
+    dup char+ swap c@
+    ;
+
+
+\ c!++ - store a character and increment its address.
+
+: c!++		( c-addr char -- c-addr+1 )
+    over c! char+
+    ;
+
+\ ******************************************************************************
+\    String Manipulation Words.
+\ ******************************************************************************
+
+
+\ ******************************************************************************
+\ place - stores the counted representation of a string at c-addr-2.
+\ ******************************************************************************
+
+: place		( c-addr1 u c-addr2 -- )
+    over c!++		\ Store the string length at c-addr2; increment c-addr2.
+    swap cmove		\ Store the string at c-addr2+1.
+    ;
+
+
+\ ******************************************************************************
+\ strcat - concatenates two strings.  The second string is appended to the
+\    first string, so the caller is responsible for ensuring enough extra
+\    storage was allocated for the first string to include the second string.
+\ ******************************************************************************
+
+: strcat	( c-addr1 u1 c-addr2 u2 -- c-addr1 u1+u2 )
+    2>r			\ -- c-addr1 u1
+    2dup		\ -- c-addr1 u1 c-addr1 u1
+    chars +		\ Jump to end of first string.
+			\ -- c-addr1 u1 c-addr1+u1
+    2r>			\ -- c-addr1 u1 c-addr1+u1 c-addr2 u2
+    >r
+    swap r@
+    chars move		\ ( c-addr1 u1 c-addr2 c-addr1+u1 u2 -- c-addr1 u1 )
+    r> +		\ ( c-addr1 u1 -- c-addr1 u1+u2 )
+    ;
+
+
+\ ******************************************************************************
+\ strcdup - returns a dynamically allocated, counted representation copy of
+\    a string.  The application is responsible for FREEing the string.
+\ ******************************************************************************
+
+: strcdup	( c-addr u -- c-addr1 )
+    dup 1+ chars allocate throw		\ -- c-addr u c-addr1
+    dup 2swap rot			\ -- c-addr1 c-addr u c-addr1
+    place
+    ;
+
+
+\ ******************************************************************************
+\ strdup - returns a dynamically allocated copy of a string.  The application
+\    is responsible for FREEing the string.  NOTE that this word definition
+\    overrides Ficl's "softcore" definition of the same word; Ficl's version
+\    returns both the string and an IOR.  If you see STRDUP returning three
+\    arguments, it means you forgot to load UTILITY.FR!
+\ ******************************************************************************
+
+: strdup	( c-addr u -- c-addr1 u )
+    dup chars allocate throw		\ -- c-addr u c-addr1
+    swap 2dup 2>r			\ -- c-addr c-addr1 u
+    cmove
+    2r>					\ -- c-addr1 u
+    ;
+
+
+\ ******************************************************************************
+\ strndup - returns a dynamically allocated copy of a string, in which the copy
+\    may be of a different length than the original string.  Typically, strndup
+\    is used to allocate a larger string, thus leaving room for insertions into
+\    the copied string.  NOTE that the returned string has the length of the
+\    original string or the copied string, whichever is shorter.  The
+\    application is responsible for FREEing the string.
+\ ******************************************************************************
+
+: strndup	( c-addr1 u1 u2 -- c-addr2 u1|u2 )
+    dup chars allocate throw		\ Allocate new string buffer.
+    -rot 2dup > IF			\ Determine minimum length to copy.
+        nip				\ -- c-addr1 c-addr2 u2
+    ELSE
+        drop				\ -- c-addr1 c-addr2 u1
+    THEN
+    2dup 2>r cmove 2r>			\ Copy old string to new buffer.
+    ;
+
+
+\ ******************************************************************************
+\    str-insert - inserts a string into another string at a specified position.
+\        The resulting string is returned on the stack.  The position is
+\        specified by the character offset, 0..N, in the original string.
+\        The second string is inserted *after* the indexed (1..N) character.
+\        For example, with an offset of 0, the second string is inserted at the
+\        very beginning of the original string; i.e., before the 1st character
+\        in the original string.  With an offset of 1, the second string is
+\        inserted after the first character; i.e., before the second character.
+\        With an offset of N (the length of the original string), the second
+\        string is inserted after the last character in the original string;
+\        i.e., the strings are concatenated.
+\ ******************************************************************************
+
+: str-insert		( c-addr1 u1 c-addr2 u2 offset -- c-addr1 u1+u2 )
+    rot
+    { OFFSET C-ADDR2 }
+    over OFFSET swap > IF	\ Offset not in range 0..N?
+        drop EXIT		\ Return original string.
+    THEN
+    2>r				\ Save u1 and u2.	-- c-addr1
+    dup OFFSET chars +		\ -- c-addr1 c-addr1+offset
+    dup				\ -- c-addr1 c-addr1+offset c-addr1+offset
+    r@ chars +			\ -- c-addr1 c-addr1+offset c-addr1+offset+u2
+    2r@ drop OFFSET -		\ -- ... c-addr1+offset c-addr1+offset+u2 u1-offset
+    chars move			\ -- c-addr1
+    OFFSET C-ADDR2 r@		\ -- c-addr1 offset c-addr2 u2
+    strcat			\ -- c-addr1 offset+u2
+    drop 2r> +			\ -- c-addr1 u1+u2
+    ;
+
+
+\ ******************************************************************************
+\    str-remove - removes a range of characters from a string beginning at a
+\        specified position in the string.  The resulting string is returned
+\        on the stack.  The position is specified by the character offset,
+\        0..N-1, in the string.  Characters are removed beginning at the offset
+\        character.  For example, with an offset of 0, the specified number of
+\        characters are removed from the beginning of the string.  With an
+\        offset of 1, characters are removed after the 1st character; i.e.,
+\        beginning with the second character.  An offset of N-1 (where N is
+\        the length of the string) removes the last character in the string.
+\ ******************************************************************************
+
+: str-remove		( c-addr u offset #rem -- c-addr u-#rem )
+    { OFFSET #REMOVE }
+    OFFSET 1+ over > IF		\ Offset not in range 0..N-1?
+        EXIT			\ Return original string.
+    THEN
+    OFFSET #REMOVE + over > IF	\ # to remove exceeds length of string?
+        dup OFFSET - to #REMOVE	\ Remove only to end of string.
+    THEN
+    >r				\ Save u
+    OFFSET over			\ -- c-addr offset c-addr
+    over chars +		\ -- c-addr offset c-addr+offset
+    #REMOVE chars +		\ -- c-addr offset c-addr+offset+#rem
+    r>				\ Restore u.
+    OFFSET - #REMOVE -		\ -- c-addr offset c-addr+offset+#rem u-offset-#rem
+    strcat			\ -- c-addr u-#rem
+    ;
+
+
+\ ******************************************************************************
+\ string, - compiles a string, adding its counted representation to the
+\    dictionary.
+\ ******************************************************************************
+
+: string,	( c-addr u -- )
+    here over 1+ chars allot	\ Reserve space for the string.
+    place			\ Store the string.
+    ;
+
+
+\ ******************************************************************************
+\    s/// - locates the first occurrence of a search string in a string and
+\        replaces it with a replacement string.  If the search string is found
+\        and replaced, the modified string and true are returned on the stack.
+\        If the search string is not found, the original string and false are
+\        returned on the stack.  (In the stack picture below, the strings are
+\        actually c-addr/u pairs.)
+\ ******************************************************************************
+
+: s///		( orig-string search-string replace-string -- mod-string flag )
+    { 2:SEARCH-STRING 2:REPLACE-STRING }
+    2dup SEARCH-STRING search
+    0= IF 2drop false EXIT THEN		\ Exit if search string not found.
+    nip over swap - >r			\ Offset where search string was found.
+    r@ SEARCH-STRING nip str-remove	\ Remove search string from string.
+    REPLACE-STRING r> str-insert	\ Insert replacement string in string.
+    true
+    ;
+
+
+\ ******************************************************************************
+\    s///g - performs a global search and replace in a string.  All occurrences
+\        of the search string are replaced by the replacement string.  If any
+\        replacements are made, the modified string is returned on the stack.
+\        Otherwise the original string is returned on the stack.
+\ ******************************************************************************
+
+: s///g		( orig-string search-string replace-string -- mod-string )
+    { 2:SEARCH-STRING 2:REPLACE-STRING }
+    BEGIN
+        SEARCH-STRING REPLACE-STRING s///
+        0=
+    UNTIL
+    ;
+
+\ ******************************************************************************
+\    Escaped strings contain special characters indicated by "\c" and/or
+\    arbitrary characters specified in hexadecimal, "\xXX".  Some Forths
+\    have the S\" word for escaped strings, but Ficl doesn't.  The table,
+\    EscapeTable, is borrowed from the Forth200x proposal for escaped strings.
+\    ( http://www.forth200x.org/escaped-strings.html )  As I understand, there
+\    is some controversy because the Forth200x proposal doesn't define
+\    interpretation semantics for S\".  In my approach below, you can use the
+\    standard S" word to define the string and invoke "escaped" to perform the
+\    escape substitutions.
+\ ******************************************************************************
+
+
+CREATE EscapeTable	( -- addr )	\ Table of translations for \a..\z.
+         7 c,    \ \a
+         8 c,    \ \b
+    char c c,    \ \c
+    char d c,    \ \d
+        27 c,    \ \e
+        12 c,    \ \f
+    char g c,    \ \g
+    char h c,    \ \h
+    char i c,    \ \i
+    char j c,    \ \j
+    char k c,    \ \k
+        10 c,    \ \l
+    char m c,    \ \m
+        10 c,    \ \n	(Unices only)
+    char o c,    \ \o
+    char p c,    \ \p
+    char " c,    \ \q
+        13 c,    \ \r
+    char s c,    \ \s
+         9 c,    \ \t
+    char u c,    \ \u
+        11 c,    \ \v
+    char w c,    \ \w
+    char x c,    \ \x
+    char y c,    \ \y
+         0 c,    \ \z
+
+
+\ ******************************************************************************
+\    hex2char - converts a 2-character hexadecimal number to a character with
+\        the same value.
+\ ******************************************************************************
+
+
+: hex2char		( c-addr u -- char )
+    base @ >r hex		\ Save the current conversion base; use base 16.
+    0 s>d 2swap			\ -- 0 0 c-addr u
+    >number			\ Convert "xx" to the special character.
+    2drop drop			\ char 0 c-addr' u' -- char
+    r> base !			\ Restore the conversion base.
+    ;
+
+
+\ ******************************************************************************
+\ escaped - returns a string with all escape sequences replaced by the desired
+\    special characters.
+\ ******************************************************************************
+
+false constant SLASH-N-IS-CRLF		\ Set to true for Windows.
+
+
+\ escape-sequence? - checks if an escape sequence has been encountered.
+\    The address/count of the string being examined is preserved.
+
+: escape-sequence?	( c-addr u -- c-addr u flag )
+    over c@ [char] \ =
+    ;
+
+
+\ escape-char - returns the escaped character in an escape sequence;
+\    i.e., the character following the "\".  The address/count of the
+\    string being examined is preserved.
+
+: escaped-char		( c-addr u -- c-addr u char )
+    over char+ c@
+    ;
+
+
+: escaped		( c-addr u1 -- c-addr u2 )
+    2dup				\ -- entire-string remaining-string
+    BEGIN
+        dup 1 >				\ Trailing slash escapes scrutiny.
+    WHILE
+        escape-sequence? IF		\ Beginning of escape sequence?
+            escaped-char [char] x =	\ "\x"?
+            over 3 >			\ Enough room for "\xXX"?
+            logical-and IF
+                over dup char+ char+	\ Advance past "\x".
+                2 hex2char		\ Convert hex value "XX" to character.
+                swap c!			\ Store the character in the string.
+                1 3 str-remove		\ Move remaining string down.
+                1 /string		\ Adjust remaining string's size.
+                rot 3 - -rot		\ Adjust entire string's length.
+            ELSE escaped-char [char] n =
+                 SLASH-N-IS-CRLF
+                 logical-and IF		\ "\n" translates to CR/LF?
+                swap 10 c!++		\ Store carriage return ...
+                13 c!++ swap		\ ... and line feed.
+                2 -			\ Adjust the remaining string's length.
+            ELSE
+                escaped-char dup	\ "\a" .. "\z"?
+                [char] a [char] z 1+ within IF
+                    [char] a -		\ Offset from table base.
+                    EscapeTable + c@	\ Lookup the escape sequence.
+                THEN
+                >r over r> swap c!	\ Store escaped character in string.
+                1 1 str-remove		\ Move remaining string down.
+                1 /string		\ Adjust remaining string's size.
+                rot 1- -rot		\ Adjust entire string's length.
+            THEN THEN
+        ELSE
+            1 /string			\ Skip normal, non-escaped characters.
+        THEN
+    REPEAT
+    2drop				\ Drop the remaining string.
+    ;
+
+\ ******************************************************************************
+\    Searching Strings.
+\ ******************************************************************************
+
+
+\ ******************************************************************************
+\ strchr - scans a string for a character and returns the string beginning
+\    at that character.  Zero (0) is returned if the character is not found.
+\ ******************************************************************************
+
+: strchr	( c-addr u char -- 0 | c-addr1 u1 )
+    -rot			\ -- char c-addr u
+    BEGIN
+        dup 0> IF		\ char c-addr' u' --
+            swap		\ -- char u' c-addr'
+            dup c@		\ -- char u' c-addr' char'
+            3 pick		\ -- char u' c-addr' char' char
+            <>			\ -- char u' c-addr' flag
+        ELSE
+            swap false		\ -- char u' c-addr' flag
+        THEN
+    WHILE
+        swap 1 /string		\ char u' c-addr' -- char c-addr'+1 u'-1
+    REPEAT
+    swap			\ -- char c-addr' u'
+    dup IF
+        rot drop		\ -- c-addr1 u1 (if character found)
+    ELSE
+        -rot 2drop		\ -- 0 (if character not found)
+    THEN
+    ;
+
+
+\ ******************************************************************************
+\ strrchr - reverse scans a string for a character and returns the string
+\    beginning at that character.  Zero (0) is returned if the character
+\    is not found.
+\ ******************************************************************************
+
+: strrchr	( c-addr u char -- 0 | c-addr1 u1 )
+    -rot			\ -- char c-addr u
+    dup >r			\ Save original u.
+    BEGIN
+        dup 0> IF		\ char c-addr u' --
+            over over c[]@	\ -- char c-addr u' char'
+            3 pick		\ -- char c-addr u' char' char
+            <>			\ -- char c-addr u' flag
+        ELSE
+            false		\ -- char c-addr u' flag
+        THEN
+    WHILE
+        1-			\ -- char c-addr u'-1
+    REPEAT
+    rot drop			\ char c-addr u' -- c-addr u'
+    r>				\ Restore original u.
+    swap			\ -- c-addr u u'
+    dup IF
+        1-			\ -- c-addr u u'-1
+        /string			\ -- c-addr1 u1 (if character found)
+    ELSE
+        -rot 2drop		\ -- 0 (if character not found)
+    THEN
+    ;
+
+\ ******************************************************************************
+\    Scanning whitespace and non-whitespace characters in strings.  Whitespace
+\    is considered to be a space or a non-NUL (0) control character.
+\ ******************************************************************************
+
+
+\ whitespace? - returns true if a character is a space or a non-NUL control
+\    character.
+
+: whitespace?	( char -- flag )
+    1 BL 1+ within
+    ;
+
+
+\ cspan-ws - returns the number of non-whitespace characters at the beginning
+\    of a string.
+
+: cspan-ws	( c-addr u1 -- u2 )
+    swap over		\ Save original string length.
+    BEGIN		\ Advance until whitespace character is encountered.
+        dup
+    WHILE		\ Remaining length > 0?
+        over c@ whitespace? 0=
+    WHILE		\ Non-whitespace character?
+        1 /string
+    REPEAT THEN
+    nip -		\ u2 = original length - remaining length.
+    ;
+
+
+\ span-ws - returns the number of whitespace characters at the beginning
+\    of a string.
+
+: span-ws	( c-addr u1 -- u2 )
+    swap over		\ Save original string length.
+    BEGIN		\ Advance until non-whitespace character is encountered.
+        dup
+    WHILE		\ Remaining length > 0?
+        over c@ whitespace?
+    WHILE		\ Whitespace character?
+        1 /string
+    REPEAT THEN
+    nip -		\ u2 = original length - remaining length.
+    ;
+
+
+\ rcspan-ws - returns the number of non-whitespace characters at the end of a
+\    string.
+
+: rcspan-ws	( c-addr u1 -- u2 )
+    swap over		\ Save original string length.
+    BEGIN		\ Back up until whitespace character is encountered.
+        dup
+    WHILE		\ Remaining length > 0?
+        2dup c[]@ whitespace? 0=
+    WHILE		\ Non-whitespace character?
+        1-
+    REPEAT THEN
+    nip -		\ u2 = original length - truncated length.
+    ;
+
+
+\ rspan-ws - returns the number of whitespace characters at the end of a string.
+
+: rspan-ws	( c-addr u1 -- u2 )
+    swap over		\ Save original string length.
+    BEGIN		\ Back up until non-whitespace character is encountered.
+        dup
+    WHILE		\ Remaining length > 0?
+        2dup c[]@ whitespace?
+    WHILE		\ Whitespace character?
+        1-
+    REPEAT THEN
+    nip -		\ u2 = original length - truncated length.
+    ;
+
+
+\ ******************************************************************************
+\    Trimming whitespace from strings, where whitespace is considered to be a
+\    space or a non-NUL (0) control character.
+\ ******************************************************************************
+
+
+\ -leading-ws - trims leading whitespace from a string.
+
+: -leading-ws	( c-addr u -- c-addr' u' )
+    2dup span-ws	\ Determine length of leading whitespace.
+    /string		\ Move starting address forward.
+    ;
+
+
+\ -trailing-ws - trims trailing whitespace from a string.
+
+: -trailing-ws	( c-addr u -- c-addr u' )
+    2dup rspan-ws	\ Determine length of trailing whitepace.
+    -			\ Subtract from total length.
+    ;
+
+
+\ squeeze-ws - trims leading and trailing whitespace from a string.
+
+: squeeze-ws	( c-addr u -- c-addr' u' )
+    -leading-ws
+    -trailing-ws
+    ;
+
+\ ******************************************************************************
+\
+\    Getting consecutive whitespace-delimited words from a string.  Given an
+\    input string, GETWORD-WS returns two strings: (1) the first word in the
+\    input string and (ii) the remainder of the string following the word.
+\    (The first word is on top of the stack; the remainder string is below.)
+\    After processing the word, GETWORD-WS can be invoked on the remainder
+\    string to get the second word in the input string, and so on.
+\
+\    For example, the following code processes a string with 3 words in it:
+\
+\        : process-3-items	( c-addr u -- )
+\            getword-ws process-item
+\            getword-ws process-item
+\            getword-ws process-item
+\            2drop
+\            ;
+\
+\ ******************************************************************************
+
+
+\ getword-ws - gets the first whitespace-delimited word from a string.
+
+: getword-ws		( c-addr u -- c-addr1+u1 u'-u1 c-addr1 u1 )
+    -leading-ws			\ -- c-addr1 u'
+    over >r			\ Save c-addr1.
+    2dup cspan-ws		\ -- c-addr1 u' u1
+    dup >r			\ Save u1.
+    /string			\ -- c-addr1+u1 u'-u1
+    2r>				\ Restore c-addr1/u1.
+    ;
+
+\ ******************************************************************************
+\    Scanning Arbitrary Character Sets.
+\ ******************************************************************************
+
+
+\ ******************************************************************************
+\ cspan-any - spans the complement of a set of characters at the beginning of
+\    a string.  The string being scanned is c-addr1/u1.  The characters not to
+\    be spanned, the so-called "reject" set, are the characters in c-addr2/u2.
+\    The number of characters spanned at the beginning of the string is
+\    returned on the stack as u3.  Typically, the "reject" set is made up of
+\    delimiter characters that delimit text items.  Span-any is called to skip
+\    delimiters and to locate the beginning of a text item; cspan-any is then
+\    called to skip non-delimiter characters, thereby determining the length
+\    of the text item.  (For whitespace-delimited text, use the span-ws,
+\    cspan-ws, and/or getword-ws words defined above.)
+\ ******************************************************************************
+
+: cspan-any		( c-addr1 u1 c-addr2 u2 -- u3 )
+    { 2:REJECT-SET }
+    swap over		\ Save original string length.
+    BEGIN		\ Advance until character in reject set is reached.
+        dup
+    WHILE		\ Remaining length > 0?
+        over c@ REJECT-SET rot strchr 0=
+    WHILE		\ Character not in reject set?
+        1 /string
+    REPEAT drop THEN	\ Drop address returned by strchr.
+    nip -		\ u3 = original length - remaining length.
+    ;
+
+
+\ ******************************************************************************
+\ span-any - spans a set of characters at the beginning of a string.  The
+\    string being scanned is c-addr1/u1.  The characters to be spanned, the
+\    so-called "accept" set, are the characters in c-addr2/u2.  The number of
+\    characters spanned at the beginning of the string is returned on the stack
+\    as u3.  Typically, the "accept" set is made up of delimiter characters
+\    that delimit text items.  Span-any is called to skip delimiters and to
+\    locate the beginning of a text item; cspan-any is then called to skip
+\    non-delimiter characters, thereby determining the length of the text item.
+\    (For whitespace-delimited text, use the span-ws, cspan-ws, and/or
+\    getword-ws words defined above.)
+\ ******************************************************************************
+
+: span-any		( c-addr1 u1 c-addr2 u2 -- u3 )
+    { 2:ACCEPT-SET }
+    swap over		\ Save original string length.
+    BEGIN		\ Advance until character not in accept set is reached.
+        dup
+    WHILE		\ Remaining length > 0?
+        over c@ ACCEPT-SET rot strchr
+    WHILE		\ Character in accept set?
+        drop 1 /string
+    REPEAT THEN
+    nip -		\ u3 = original length - remaining length.
+    ;
+
+
+\ ******************************************************************************
+\ rcspan-any - spans the complement of a set of characters at the end of a
+\    string.  The string being scanned is c-addr1/u1.  The characters not to
+\    be spanned, the so-called "reject" set, are the characters in c-addr2/u2.
+\    The number of characters spanned at the end of the string is returned on
+\    the stack as u3.  Basically, rcspan-any is a multi-character version of
+\    strrchr: strrchr scans a string backwards for a single character, while
+\    rcspan-any scans a string backwards for any of a set of characters, the
+\    characters in the "reject" set.  (For whitespace-delimited text, use the
+\    rcspan-ws word defined above.)
+\ ******************************************************************************
+
+: rcspan-any		( c-addr1 u1 c-addr2 u2 -- u3 )
+    { 2:REJECT-SET }
+    swap over		\ Save original string length.
+    BEGIN		\ Back up until character in reject set is reached.
+        dup
+    WHILE		\ Remaining length > 0?
+        2dup c[]@ REJECT-SET rot strchr 0=
+    WHILE		\ Character not in reject set?
+        1-
+    REPEAT drop THEN	\ Drop address returned by strchr.
+    nip -		\ u3 = original length - truncated length.
+    ;
+
+
+\ ******************************************************************************
+\ rspan-any - spans a set of characters at the end of a string.  The string
+\    being scanned is c-addr1/u1.  The characters to be spanned, the so-called
+\    "accept" set, are the characters in c-addr2/u2.  The number of characters
+\    spanned at the end of the string is returned on the stack as u3.
+\    Typically, the "accept" set is made up of delimiter characters that
+\    delimit text items; rspan-any is useful for trimming trailing delimiter
+\    characters from a string.  (For whitespace-delimited text, use the
+\    rspan-ws word defined above.)
+\ ******************************************************************************
+
+: rspan-any		( c-addr1 u1 c-addr2 u2 -- u3 )
+    { 2:ACCEPT-SET }
+    swap over		\ Save original string length.
+    BEGIN		\ Back up until character not in accept set is reached.
+        dup
+    WHILE		\ Remaining length > 0?
+        2dup c[]@ ACCEPT-SET rot strchr
+    WHILE		\ Character in accept set?
+        drop 1-
+    REPEAT THEN
+    nip -		\ u3 = original length - truncated length.
+    ;
+
+
+\ ******************************************************************************
+\    Trimming arbitrary sets of characters (e.g., delimiters) from strings.
+\ ******************************************************************************
+
+
+\ -leading-any - trims leading set of characters from a string.
+
+: -leading-any		( c-addr1 u1 c-addr2 u2 -- c-addr3 u3 )
+    2over 2swap span-any	\ Determine length of leading span.
+    /string			\ Move starting address forward.
+    ;
+
+
+\ -trailing-any - trims trailing set of characters from a string.
+
+: -trailing-any		( c-addr1 u1 c-addr2 u2 -- c-addr1 u3 )
+    2over 2swap rspan-any	\ Determine length of trailing span.
+    -				\ Subtract from total length.
+    ;
+
+
+\ squeeze-any - trims leading and trailing set of characters from a string.
+
+: squeeze-any		( c-addr1 u1 c-addr2 u2 -- c-addr3 u3 )
+    2swap 2over -leading-any
+    2swap -trailing-any
+    ;
+
+\ ******************************************************************************
+\
+\    Getting consecutive words, separated by arbitrary delimiters, from a
+\    string.  Given an input string (c-addr1/u1) and a set of delimiters
+\    (c-addr2/u2), GETWORD-ANY returns two strings: (1) the first word in
+\    the input string and (ii) the remainder of the string following the word.
+\    (The first word is on top of the stack; the remainder string is below.)
+\    After processing the word, GETWORD-ANY can be invoked on the remainder
+\    string to get the second word in the input string, and so on.
+\
+\    For example, the following code processes a string with 3 words in it:
+\
+\        : process-3-items	( c-addr1 u1 c-addr2 u2 -- )
+\            { 2:DELIMITERS }
+\            DELIMITERS getword-any process-item
+\            DELIMITERS getword-any process-item
+\            DELIMITERS getword-any process-item
+\            2drop
+\            ;
+\
+\ ******************************************************************************
+
+
+\ getword-any - gets the first word, separated by arbitrary delimiters,
+\    from a string.  The input string is c-addr1/u1; the possible delimiters
+\    are the characters in c-addr2/u2.
+
+: getword-any		( c-addr1 u1 c-addr2 u2 -- c-addr3+u3 u'-u3 c-addr3 u3 )
+    { 2:DELIMITERS }
+    DELIMITERS -leading-any	\ -- c-addr3 u'
+    over >r			\ Save c-addr3.
+    2dup DELIMITERS cspan-any	\ -- c-addr3 u' u3
+    dup >r			\ Save u3.
+    /string			\ -- c-addr3+u3 u'-u3
+    2r>				\ Restore c-addr3/u3.
+    ;

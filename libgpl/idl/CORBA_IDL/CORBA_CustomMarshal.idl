@@ -1,0 +1,9 @@
+// $Id: CORBA_CustomMarshal.idl,v 1.1 2003/05/29 00:13:05 alex Exp $
+// File: CORBA_CustomMarshal.idl
+// CORBA 3.0, Chapter 5
+// depends on CORBA_Stream.idl
+
+	abstract valuetype CustomMarshal {
+		void marshal   (in DataOutputStream os);
+		void unmarshal (in DataInputStream  is);
+	};

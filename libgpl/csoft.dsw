@@ -1,0 +1,238 @@
+Microsoft Developer Studio Workspace File, Format Version 6.00
+# WARNING: DO NOT EDIT OR DELETE THIS WORKSPACE FILE!
+
+###############################################################################
+
+Project: "anise"=.\anise\anise.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libgpl
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "chafn"=.\tools\chafn.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libgpl
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "colior"=.\tools\colior.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libgpl
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "dump"=.\tools\dump.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libgpl
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "duop"=.\tools\duop.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libgpl
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "frob"=.\tools\frob.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libgpl
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "gflow"=.\tools\gflow.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libgpl
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "libgpl"=.\libgpl\libgpl.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libxdr
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "libxdr"=.\libxdr\libxdr.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "ls"=.\tools\ls.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libgpl
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "pjoin"=.\tools\pjoin.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libgpl
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "rdate"=.\tools\rdate.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libgpl
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "scanet"=.\tools\scanet.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libgpl
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "tag311"=.\tools\tag311.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libgpl
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "talknet"=.\tools\talknet.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libgpl
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Global:
+
+Package=<5>
+{{{
+}}}
+
+Package=<3>
+{{{
+}}}
+
+###############################################################################

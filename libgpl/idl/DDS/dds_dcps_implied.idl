@@ -1,0 +1,68 @@
+// Implied IDL for type "Foo"
+// Example user defined structure "Foo"
+
+struct Foo {
+    long dummy;
+}; 
+
+/***************************
+ * Implied IDL for type Foo
+ ***************************/
+
+#include "dds_dcps.idl"
+
+typedef sequence<Foo> FooSeq;
+
+interface FooDataType : DCPS::DataType {
+    DCPS::ReturnCode_t register_type(in DCPS::DomainParticipant participant, 
+				     in string type_name);
+};
+
+interface FooDataWriter : DCPS::DataWriter {
+
+    DCPS::InstanceHandle_t register_instance(in Foo instance_data);
+
+    DCPS::ReturnCode_t unregister_instance(in Foo instance_data, 
+				     in DCPS::InstanceHandle_t  handle);
+
+    DCPS::ReturnCode_t write(in Foo instance_data, 
+			     in DCPS::InstanceHandle_t handle);
+
+    DCPS::ReturnCode_t write_w_timestamp(in Foo instance_data, 
+				   in DCPS::InstanceHandle_t handle, 
+				   in DCPS::Time_t source_timestamp);
+
+    DCPS::ReturnCode_t dispose(in Foo instance_data, 
+			       in DCPS::InstanceHandle_t instance_handle);
+
+    DCPS::ReturnCode_t dispose_w_timestamp(in Foo instance_data, 
+				    in DCPS::InstanceHandle_t instance_handle, 
+				    in DCPS::Time_t source_timestamp);
+
+    DCPS::ReturnCode_t get_key(inout Foo key_holder, 
+			       in DCPS::InstanceHandle_t handle);
+};
+
+
+interface FooDataReader : DCPS::DataReader {
+    DCPS::ReturnCode_t read(out FooSeq received_data,
+			    out DCPS::SampleInfoSeq info_seq,
+			    in  DCPS::SampleStateMask s_mask, 
+			    in  DCPS::LifecycleStateMask l_mask);
+    
+    DCPS::ReturnCode_t take(out FooSeq received_data,
+			    out DCPS::SampleInfoSeq info_seq,
+			    in  DCPS::SampleStateMask s_mask, 
+			    in  DCPS::LifecycleStateMask l_mask);
+    
+    DCPS::ReturnCode_t read_w_condition(out FooSeq received_data,
+					out DCPS::SampleInfo info_seq,
+					in  DCPS::ReadCondition condition);
+    
+    DCPS::ReturnCode_t take_w_condition(out FooSeq received_data,
+					out DCPS::SampleInfo info_seq,
+					in  DCPS::ReadCondition condition);
+    
+    DCPS::ReturnCode_t get_key(inout Foo key_holder, 
+			       in DCPS::InstanceHandle_t handle);
+};

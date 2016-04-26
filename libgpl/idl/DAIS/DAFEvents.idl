@@ -1,0 +1,25 @@
+// $Id: DAFEvents.idl,v 1.1 2003/05/29 00:26:31 alex Exp $
+//File: DAFEvents.idl
+#ifndef _DAF_EVENTS_IDL_
+#define _DAF_EVENTS_IDL_
+
+#include <DAFIdentifiers.idl>
+#include <CosEventChannelAdmin.idl>
+
+#pragma prefix "omg.org"
+module DAFEvents
+{
+	// event emitted by data provider after data changes
+	struct ResourceChangeEvent
+	{
+		DAFIdentifiers::ResourceIDSequence affected;
+	};
+
+	// interface for connection an event push consumer
+	interface ResourceEventSource
+	{
+							CosEventChannelAdmin::ProxyPushSupplier obtain_push_supplier();
+							unsigned long long current_version();
+	};
+};
+#endif // _DAF_EVENTS_IDL_

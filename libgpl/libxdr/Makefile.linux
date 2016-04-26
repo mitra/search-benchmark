@@ -1,0 +1,35 @@
+# $Id: Makefile.linux,v 1.1 2003/09/16 23:24:56 alex Exp alex $
+#
+
+LIBRARY = libxdr.a
+
+SRCS =	\
+	xdr_array.c \
+	xdr.c \
+	xdr_float.c \
+	xdr_mem.c \
+	xdr_rec.c \
+	xdr_reference.c \
+	xdr_stdio.c
+
+OBJS = $(SRCS:.c=.o)
+
+ROOT = ..
+
+ARFLAGS = rv
+CC = gcc
+CFLAGS = -g -O -Wall -pedantic
+CPPFLAGS = \
+	-I$(ROOT)/include
+RANLIB = ranlib
+RM = rm -f
+
+all::	$(LIBRARY)
+
+$(LIBRARY): $(OBJS)
+	$(RM) $@
+	$(AR) $(ARFLAGS) $@ $(OBJS)
+	$(RANLIB) $@
+
+clean::
+	-$(RM) $(OBJS) $(LIBRARY)

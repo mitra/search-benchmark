@@ -1,0 +1,863 @@
+// $Id: LECIS.idl,v 1.3 2003/06/11 21:59:22 alex Exp $
+//Laboratory Equipment Control Interface Specification (LECIS) - OMG IDL
+//Object Management Group, Inc.
+//
+//Copyright (c) 2001, Advanced Chemistry Development
+//Copyright (c) 2001, CREON·LAB·CONTROL AG
+//Copyright (c) 2003 Object Management Group, Inc.
+//
+//The companies listed above have granted to the Object Management Group, Inc.
+//(OMG) a nonexclusive, royalty-free, paid up, worldwide license to copy and
+//distribute this document and to modify this document and distribute copies of
+//the modified version. Each of the copyright holders listed above has agreed
+//that no person shall be deemed to have infringed the copyright in the included
+//material of any such copyright holder by reason of having used the
+//specification set forth herein or having conformed any computer software to
+//the specification.
+//
+//This file contains OMG IDL from the Laboratory Equipment Control Interface //Specification, v1.0.
+//OMG regularly publishes a summary file that contains all the "code" parts of
+//an OMG formal document. Every formal document line that is IDL, PIDL, or
+//language code is included in the summary file. The reason for such a listing
+//is to give readers an electronic version of the "code" so that they can
+//extract pieces of it. Readers might want to test an example, include it in
+//their own code, or use it for documentation purposes. Having the code lines
+//available electronically means there is less likelihood of a transcription
+//error.
+//
+//SCD-Interface IDL
+
+#ifndef __SCD_DEFINED
+#define __SCD_DEFINED
+
+
+module SCD {
+	interface ICommand;
+	interface IEvent;
+	interface IPort;
+	interface IResource;
+	interface IExtMacroCommandList;
+	interface IWorkCell;
+
+
+	struct SAdministrative {
+		string model_number;
+		string serial_number;
+		string software_version;
+		string support_address;
+		string manufacturer_id;
+		string manufacturer_name;
+		string description;
+		string update_address;
+		string dcd_version;
+		string protocol;
+	};
+
+	typedef sequence <string> SeqString;
+
+	enum ECommandCategory {
+		_INIT,
+		CONTROL,
+		FUNCTION,
+		CONFIGURE,
+		RECOVERY,
+		STATUSREQ,
+		MAINTAIN,
+		CALIBRATE,
+		ADMIN,
+		RESULT
+	};
+
+//******************************************************************************
+// Typo present in actual spec too.
+//******************************************************************************
+//	enum ECommandCategory {
+//		_INIT,
+//******************************************************************************
+
+	enum EVariableType {
+		LONG_TYPE,
+		FLOAT_TYPE,
+		BOOLEAN_TYPE,
+		STRING_TYPE,
+		OCTET_TYPE,
+		SEQ_LONG_TYPE,
+		SEQ_FLOAT_TYPE,
+		SEQ_OCTET_TYPE
+	};
+
+	enum ETransferType {
+		INTRANSFER,
+		OUTTRANSFER,
+		INOUTTRANSFER
+	};
+
+	struct SItemData {
+		string item;
+		string value;
+	};
+
+	enum ENumberType {
+		LONG_NTYPE,
+		FLOAT_NTYPE
+	};
+
+	struct SRange {
+		ENumberType range_type;
+		string low_limit;
+		string high_limit;
+	};
+
+	struct SArgument {
+		string name;
+		EVariableType argument_type;
+		any default_value;
+		ETransferType transfer_type;
+		string description;
+		sequence <SItemData> properties;
+		SRange range;
+	};
+
+	enum EAccessType {
+		INLET,
+		OUTLET,
+		INOUTLET,
+		TRANSFER
+	};
+
+	enum EOwnerstatus {
+		PRIVATE_OWNER,
+		LOCKED,
+		UNLOCKED
+	};
+
+	enum EComponentCategory {
+		SYSTEM,
+		WORKCELL,
+		SLM,
+		RESOURCE,
+		SUBUNIT
+	};
+
+	struct SComponentID {
+		string workcell_id;
+		string slm_id;
+		EComponentCategory component_category;
+		string subunit_id;
+		string resource_id;
+	};
+
+	struct SOwnership {
+		EOwnerstatus owner_status;
+		SComponentID owner;
+	};
+
+	struct SValue {
+		string value;
+		ENumberType type;
+		long exponent;
+		string unit;
+	};
+
+	enum EResourceCategory {
+		HARDWARE,
+		SAMPLE,
+		REAGENT,
+		WASTE,
+		SPACE,
+		BUFFER,
+		UNDEFINED
+	};
+
+	enum ECapacityType {
+		FINITE,
+//******************************************************************************
+// Conflict with VC++ "#define INFINITE" in "winbase.h"; added "ECT_" prefix.
+//******************************************************************************
+		ECT_INFINITE
+//******************************************************************************
+	};
+
+	enum EDownTimeCategory {
+		CLEANING,
+		CALIBRATION,
+		SOFTWARE_UPDATE,
+		HARDWARE_UPDATE
+	};
+
+	struct STranslation {
+		long x;
+		long y;
+		long z;
+	};
+
+	struct SRotation {
+		long x;
+		long y;
+		long z;
+	};
+
+	enum ESystemDomain {
+		COUNTRY,
+		DEPARTMENT,
+		SUBDIVISION,
+		LABORATORY,
+		ROOM
+	};
+
+	enum EEventCategory {
+		ALARM,
+		MESSAGE,
+		DATA_DIRECT,
+		DATA_LINK,
+		SYSVAR_CHANGED,
+		CONTROL_STATE_CHANGED,
+		SLM_STATE_CHANGED
+	};
+
+	struct SSystemVariable {
+		string variable_id;
+		string description;
+		EVariableType data_type;
+		any current_value;
+		string category;
+		SRange value_range;
+	};
+
+	struct SCapacity {
+		SValue min_capacity;
+		SValue max_capacity;
+		SValue fill_steps;
+	};
+
+	struct SLocation {
+		SRotation rotation;
+		STranslation translation;
+	};
+
+	struct SGeometricModel {
+		any model;
+		any access_curve;
+	};
+
+	struct SDimension {
+		string height;
+		string width;
+		SGeometricModel geometric_model;
+		string length;
+	};
+
+	struct SPhysicalCharacteristics {
+		string weight;
+		SLocation location;
+		SDimension dimension;
+	};
+
+
+	typedef sequence<any> SeqAny;
+
+	enum ECommandType {
+		ATOMIC,
+		MACRO
+	};
+
+	enum EDownTimeType {
+		ESTIMATED,
+		ACTUAL
+	};
+
+	interface IDownTime {
+		attribute string downtime_id;
+		attribute string description;
+		attribute string starttime;
+		attribute EDownTimeCategory category;
+		attribute string duration;
+		attribute EDownTimeType type;
+		attribute string interval;
+		attribute string parent_id;
+
+		boolean delete ();
+
+	};
+
+	enum EPortType {
+		DATA,
+		MATERIAL
+	};
+
+	interface ISubUnit {
+		typedef sequence <ICommand> commands_def;
+
+		typedef sequence <SAdministrative> administrative_def;
+
+		typedef sequence <IEvent> events_def;
+
+		typedef sequence <IPort> ports_def;
+
+		typedef sequence <IResource> resources_def;
+
+		typedef sequence <SItemData> properties_def;
+
+		typedef sequence <IExtMacroCommandList> subunit_external_macros_def;
+
+
+		attribute string subunit_id;
+		attribute string description;
+		attribute IDownTime maintenance;
+		attribute string parent_id;
+		attribute SeqString functionality;
+		attribute commands_def commands;
+		attribute administrative_def administrative;
+		attribute events_def events;
+		attribute ports_def ports;
+		attribute resources_def resources;
+		attribute SPhysicalCharacteristics physical_characteristics;
+		attribute properties_def properties;
+		attribute SSystemVariable system_variables;
+		attribute subunit_external_macros_def subunit_external_macros;
+		attribute commands_def primary_commands;
+
+		void delete ();
+
+	};
+
+	interface IResource {
+		typedef sequence <SItemData> properties_def;
+
+		typedef sequence <IPort> access_ports_def;
+
+		attribute string resource_id;
+		attribute string description;
+		attribute string danger_class;
+		attribute string parent_id;
+		attribute SPhysicalCharacteristics physical_characteristics;
+		attribute EResourceCategory category;
+		attribute SValue current_quantity;
+		attribute SOwnership ownership;
+		attribute properties_def properties;
+		attribute access_ports_def access_ports;
+		attribute IPort contained_in_port;
+		attribute ECapacityType capacity_type;
+
+		boolean delete ();
+
+	};
+
+	interface IPort {
+		typedef sequence <SItemData> properties_def;
+
+		typedef sequence <IResource> content_def;
+
+		attribute string port_id;
+		attribute string x;
+		attribute string y;
+		attribute SOwnership ownership;
+		attribute string z;
+		attribute EAccessType access_type;
+		attribute string description;
+		attribute string parent_id;
+		attribute SPhysicalCharacteristics physical_characteristics;
+		attribute properties_def properties;
+		attribute SValue capacity;
+		attribute content_def content;
+		attribute SCapacity quantity_range;
+		attribute EPortType port_type;
+
+		boolean delete ();
+
+	};
+
+	interface ICommand {
+		typedef sequence <SCD::ICommand> required_configurations_def;
+
+		typedef sequence <IResource> required_resources_def;
+
+		typedef sequence <IResource> produced_resources_def;
+
+		typedef sequence <IPort> port_inputs_def;
+
+		typedef sequence <IPort> port_outputs_def;
+
+		typedef sequence <SRange> measurement_bounds_def;
+
+		typedef sequence <SArgument> formal_arguments_def;
+
+		typedef sequence <SArgument> sync_response_data_def;
+
+		typedef sequence <SItemData> properties_def;
+
+		typedef sequence <SItemData> exclusion_list_def;
+
+		attribute string commandid;
+		attribute formal_arguments_def formal_arguments;
+		attribute string name;
+		attribute ECommandCategory command_category;
+		attribute string alias_name;
+		attribute required_configurations_def required_configurations;
+		attribute long duration;
+		attribute exclusion_list_def exclusion_list;
+		attribute properties_def properties;
+		attribute string parent_id;
+		attribute string description;
+		attribute required_resources_def required_resources;
+		attribute produced_resources_def produced_resources;
+		attribute port_inputs_def port_inputs;
+		attribute port_outputs_def port_outputs;
+		attribute measurement_bounds_def measurement_bounds;
+		attribute ECommandType command_type;
+		attribute sync_response_data_def sync_response_data;
+
+		boolean delete ();
+
+	};
+
+
+
+	interface ISLM {
+		typedef sequence <IResource> resources_def;
+
+		typedef sequence <ISubUnit> sub_units_def;
+
+		typedef sequence <SItemData> properties_def;
+
+		typedef sequence <IDownTime> downtime_def;
+
+		typedef sequence <IPort> ports_def;
+
+		typedef sequence <IEvent> events_def;
+
+		typedef sequence <SSystemVariable> system_variables_def;
+
+		typedef sequence <ICommand> commands_def;
+
+		attribute SPhysicalCharacteristics physical_characteristics;
+		attribute string slm_id;
+		attribute string parent_id;
+		attribute resources_def resources;
+		attribute sub_units_def sub_units;
+		attribute SAdministrative administrative;
+		attribute properties_def properties;
+		attribute SeqString functionality;
+		attribute downtime_def downtime;
+		attribute ports_def ports;
+		attribute events_def events;
+		attribute system_variables_def system_variables;
+		attribute IExtMacroCommandList slm_external_macros;
+		attribute commands_def primary_commands;
+
+		boolean delete ();
+
+	};
+
+
+	interface IEvent {
+		typedef sequence <SItemData> properties_def;
+
+		typedef sequence <SArgument> event_data_types_def;
+
+		typedef sequence <ICommand> possible_event_reaction_def;
+
+		typedef sequence <SSystemVariable> system_variables_def;
+
+		attribute string event_id;
+		attribute long priority;
+		attribute string description;
+		attribute string parent_id;
+		attribute EEventCategory category;
+		attribute properties_def properties;
+		attribute event_data_types_def event_data_types;
+		attribute SeqAny possible_event_data_values;
+		attribute possible_event_reaction_def possible_event_reaction;
+		attribute system_variables_def system_variables;
+
+		void delete ();
+
+	};
+
+
+	struct SExtMacroCommand {
+		SeqAny argument_values;
+		ICommand command_ref;
+	};
+
+	interface IExtMacroCommandList {
+		typedef sequence <SExtMacroCommand> commands_def;
+
+		typedef sequence <SItemData> properties_def;
+
+		typedef sequence <SCD::IExtMacroCommandList> ext_macros_def;
+
+		attribute string command_id;
+		attribute ECommandCategory category;
+		attribute string name;
+		attribute commands_def commands;
+		attribute string descritpion;
+		attribute SeqAny functionality;
+		attribute long duration;
+		attribute properties_def properties;
+		attribute string parent_id;
+		attribute ext_macros_def ext_macros;
+
+		boolean delete ();
+
+	};
+
+	interface IWorkCell {
+		typedef sequence <ISLM> slms_def;
+
+		typedef sequence <IResource> resources_def;
+
+		attribute string name;
+		attribute string description;
+		attribute string location;
+		attribute slms_def slms;
+		attribute SCD::IWorkCell supercell;
+		attribute resources_def resources;
+		attribute SPhysicalCharacteristics physical_characteristics;
+
+		void delete ();
+
+	};
+
+	interface ISystem {
+		typedef sequence <IWorkCell> workcells_def;
+
+		typedef sequence <IResource> resources_def;
+
+		attribute string name;
+		attribute workcells_def workcells;
+		attribute string description;
+		attribute ESystemDomain domain;
+		attribute string location;
+		attribute resources_def resources;
+	};
+
+	interface ISCDRegistry {
+
+		SCD::IWorkCell create_workcell ();
+
+		SCD::ISLM create_slm ();
+
+		SCD::ISubUnit create_sub_unit ();
+
+		SCD::ICommand create_command ();
+
+		SCD::IExtMacroCommandList create_ext_macro ();
+
+		SCD::IEvent create_event ();
+
+		SCD::IPort create_port ();
+
+		SCD::IResource create_resource ();
+
+		SCD::ISystem find_system ();
+
+		SCD::IWorkCell find_workcell (
+			in string workcell_id
+			);
+
+		SCD::ISLM find_slm (
+			in string slm_id
+			);
+
+		SCD::ISubUnit find_subunit (
+			in string slm_id,
+			in string subunit_id
+			);
+
+		SCD::ICommand find_command (
+			in string slm_id,
+			in string subunit_id,
+			in string command_id
+			);
+
+		SCD::IExtMacroCommandList find_macrocommand (
+			in string slm_id,
+			in string subunit_id,
+			in string macrocommand_id
+			);
+
+		SCD::IResource find_resource (
+			in SComponentID component_id
+			);
+
+		SCD::IPort find_port (
+			in SComponentID component_id,
+			in string port_id
+			);
+
+		SCD::IEvent find_event (
+			in string slm_id,
+			in string subunit_id,
+			in string event_id
+			);
+
+	};
+
+};
+
+#endif
+
+// SLM Interface IDL
+
+#ifndef __SLM_INTERFACE_DEFINED
+#define __SLM_INTERFACE_DEFINED
+
+
+module SLM_INTERFACE {
+
+	enum EMainCtrlState {
+		POWERED_UP,
+		INITIALIZING,
+		NORMAL_OP,
+//******************************************************************************
+// Conflict with VC++ "#define ERROR" in "wingdi.h"; added "EMCS_" prefix.
+//******************************************************************************
+		EMCS_ERROR,
+//******************************************************************************
+		ESTOPPED,
+		CLEARING,
+		CLEARED,
+		SHUTDOWN,
+		DOWN
+	};
+
+	enum ESubCtrlState {
+		SUB_POWERED_UP,
+		SUB_INITIALIZING,
+		SUB_SHUTDOWN,
+		SUB_DOWN,
+		SUB_ERROR,
+		SUB_CLEARING,
+		SUB_CLEARED,
+		SUB_ABORTED,
+		SUB_ESTOPPED,
+		SUB_IDLE,
+		SUB_PROCESSING,
+		SUB_PAUSING,
+		SUB_PAUSED,
+		SUB_RESUMING
+	};
+
+	enum EResultCode {
+		ERC_SUCCESS,
+		REMOTE_CTRL_REQ_DENIED,
+		LOCAL_CTRL_REQ_DENIED,
+		FORCE_LOCAL_CTRL_FAILED,
+		RELEASE_REMOTE_CTRL_FAILED,
+		READ_DCD_FAILED,
+		WRITE_DCD_FAILED,
+		DCD_NOT_AVAILABLE,
+		SUBUNIT_UNKNOWN,
+		DEVICE_HARDWARE_ERROR,
+		COMMUNICATION_ERROR,
+		TIMEOUT,
+		UNSPECIFIED_ERROR,
+		SUB_STATE_INCORRECT,
+		MAIN_STATE_INCORRECT,
+		PAUSE_REQUEST_DENIED,
+		TIME_SYNCHRONIZATION_FAILED,
+		UNKNOWN_COMMAND,
+		TIME_SYNCHRONIZATION_NOT_AVAILABLE,
+		WRONG_ARGUMENT_LIST,
+		DATA_ID_UNKNOWN,
+		INVALID_DATA,
+		ACCESS_DENIED,
+		EXECUTING_MACRO,
+		EXECUTION_STOPPED
+	};
+
+	typedef sequence <octet> SeqOctet;
+
+	enum ELocalRemote {
+		_LOCAL,
+		REMOTE,
+		AVAILABLE
+	};
+
+	typedef sequence <string> SeqString;
+
+
+	struct SSysVar {
+		string variable_id;
+		string description;
+		string category;
+		any value;
+	};
+
+
+	struct SSubState {
+		string sub_unit_id;
+		ESubCtrlState sub_unit_state;
+	};
+
+	typedef sequence<SSubState> SeqSubStates;
+
+
+	struct SLM_RESULT {
+		EResultCode result_code;
+		string minor_code;
+		EMainCtrlState main_state;
+		SLM_INTERFACE::SeqSubStates sub_states;
+		ELocalRemote lr_mode;
+		string message;
+	};
+
+	typedef sequence<SSysVar> SeqSysVar;
+
+	typedef sequence<any> SeqAny;
+
+	enum ELocalRemote_ArgType {
+		LOCAL_CTRL_REQ,
+		REMOTE_CTRL_REQ,
+		FORCE_LOCAL_CTRL,
+		RELEASE_CTRL
+	};
+
+	enum ECommandType {
+		ATOMIC,
+		MACRO
+	};
+
+	enum EVariableType {
+		LONG_TYPE,
+		FLOAT_TYPE,
+		BOOLEAN_TYPE,
+		STRING_TYPE,
+		OCTET_TYPE,
+		SEQ_LONG_TYPE,
+		SEQ_FLOAT_TYPE,
+		SEQ_OCTET_TYPE
+	};
+
+
+	enum EEventType {
+		EET_ALARM,
+		EET_MESSAGE,
+		EET_DATA_DIRECT,
+		EET_DATA_LINK,
+		EET_SYSVAR_CHANGED,
+		CONTROL_STATE_CHANGE,
+		DEVICE_STATE_CHANGED
+	};
+
+
+	enum EDataLinkType {
+		EDLT_FILE,
+		DB,
+		OPERATION
+	};
+
+
+
+	interface ITSC_Callback {
+I		void slm_event (
+			in string slm_id,
+			in string unit_id,
+			in string event_id,
+			in SLM_INTERFACE::EEventType event_type,
+			in string interaction_id,
+			in string priority,
+			in SLM_INTERFACE::SLM_RESULT slm_state,
+			in SLM_INTERFACE::SeqAny arguments
+			in string timestamp;
+			);
+
+	};
+
+
+	interface ILECI {
+
+		SLM_RESULT init (
+			in string unit_id,
+			in SLM_INTERFACE::ITSC_Callback callback_ref,
+			in SLM_INTERFACE::SeqAny args
+			);
+
+		SLM_RESULT estop ();
+
+		SLM_RESULT abort (
+			in string unit_id,
+			in SLM_INTERFACE::SeqAny args
+			);
+
+		SLM_RESULT clear (
+			in string unit_id,
+			in SLM_INTERFACE::SeqAny args
+			);
+
+		SLM_RESULT pause (
+			in string unit_id,
+			in SLM_INTERFACE::SeqAny args
+			);
+
+		SLM_RESULT resume (
+			in string unit_id,
+			in SLM_INTERFACE::SeqAny args
+			);
+
+		SLM_RESULT shutdown (
+			in string unit_id,
+			in SLM_INTERFACE::SeqAny args
+			);
+
+		SLM_RESULT status ();
+
+		SLM_RESULT get_SLM_id (
+			out string slm_id
+			);
+
+		SLM_RESULT get_DCD (
+			out string xml_dcd
+			);
+
+		SLM_RESULT local_remote_req (
+			in SLM_INTERFACE::ELocalRemote_ArgType req_type
+			);
+
+		SLM_RESULT synchronize_time (
+			in string time_server,
+			in string tsc_timestamp
+		);
+
+		SLM_RESULT get_subunit_ids (
+			out SLM_INTERFACE::SeqString subunits
+			);
+
+		SLM_RESULT set_system_var (
+			in string unit_id,
+			in SLM_INTERFACE::SSysVar sysvar
+			);
+
+		SLM_RESULT get_system_var (
+			in string unit_id,
+			in string sysvar_id,
+			out SLM_INTERFACE::SSysVar sysvar
+			);
+
+		SLM_RESULT run_op (
+			in string unit_id,
+			in string interaction_id,
+			in SLM_INTERFACE::ECommandType op_type,
+			in string op_name,	//Name of the operation to be called.
+			in SLM_INTERFACE::SeqAny args,
+			out SLM_INTERFACE::SeqAny return_values
+			);
+
+		SLM_RESULT get_result_data (
+			in string interaction_id,
+			in string data_id,
+			out any result_data,
+			in SLM_INTERFACE::EVariableType data_type
+			);
+
+		SLM_RESULT set_TSC_callback (
+			in SLM_INTERFACE::ITSC_Callback callback_ref
+			);
+
+
+	};
+
+};
+
+#endif

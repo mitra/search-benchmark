@@ -1,0 +1,81 @@
+# $Id: Makefile.cygwin,v 1.1 2012/05/16 09:52:50 alex Exp $
+#
+
+PROGRAMS = \
+	chafn colior cvtdec dirtree dump duop ffc frob \
+	gflow hls pjoin rdate rname scanet tag311 talknet wst
+
+ROOT = ..
+LIBS = \
+	$(ROOT)/libgpl/libgpl.a
+
+INSTALL_DIR = $(HOME)/local/bin/$(ARCH)
+
+CC = gcc
+CFLAGS = -g -O -Wall
+CPPFLAGS = \
+	-I. \
+	-I$(ROOT)/include
+LINK.c = $(CC)
+LDFLAGS = -g
+RM = rm -f
+
+all::	$(PROGRAMS)
+
+chafn:  chafn.o
+	$(LINK.c) chafn.o $(LIBS) -o $@
+
+colior:  colior.o
+	$(LINK.c) colior.o $(LIBS) -o $@
+
+cvtdec:  cvtdec.o
+	$(LINK.c) cvtdec.o $(LIBS) -o $@
+
+dirtree:  dirtree.o
+	$(LINK.c) dirtree.o $(LIBS) -o $@
+
+dump:  dump.o
+	$(LINK.c) dump.o $(LIBS) -o $@
+
+duop:  duop.o
+	$(LINK.c) duop.o $(LIBS) -o $@
+
+ffc:  ffc.o
+	$(LINK.c) ffc.o $(LIBS) -o $@
+
+frob:  frob.o
+	$(LINK.c) frob.o $(LIBS) -o $@
+
+gflow:  gflow.o
+	$(LINK.c) gflow.o $(LIBS) -o $@
+
+hls:  hls.o
+	$(LINK.c) hls.o $(LIBS) -o $@
+
+pjoin:  pjoin.o
+	$(LINK.c) pjoin.o $(LIBS) -o $@
+
+rdate:  rdate.o
+	$(LINK.c) rdate.o $(LIBS) -o $@
+
+rname:  rname.o
+	$(LINK.c) rname.o $(LIBS) -o $@
+
+scanet:  scanet.o
+	$(LINK.c) scanet.o $(LIBS) -o $@
+
+tag311:  tag311.o
+	$(LINK.c) tag311.o $(LIBS) -o $@
+
+talknet:  talknet.o
+	$(LINK.c) talknet.o $(LIBS) -o $@
+
+wst:  wst.o
+	$(LINK.c) wst.o $(LIBS) -o $@
+
+clean::
+	-$(RM) $(PROGRAMS)
+	-$(RM) *.o
+
+install:
+	cp $(PROGRAMS) $(INSTALL_DIR)

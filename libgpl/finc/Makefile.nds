@@ -1,0 +1,95 @@
+# $Id: Makefile.nds,v 1.1 2009/08/10 02:38:38 alex Exp alex $
+#
+
+PROGRAMS = finc nicl
+
+LIBRARY = libfinc
+
+SRCS =	\
+	words_drs.c \
+	words_lfn.c \
+	words_misc.c \
+	words_net.c \
+	words_iox.c \
+	words_skt.c \
+	words_tcp.c \
+	words_tv.c
+
+OBJS = $(SRCS:.c=.o)
+
+#*******************************************************************************
+#    Define the ARM-specific compilation tools to be used.  (Most NDS
+#    developers include devkitPro's "base_rules" and "ds_rules" for these
+#    definitions and for the suffix rules, but these files were written
+#    without following the conventions used in Make's implicit rules.
+#    The implicit rules work just fine for C and C++ files.)
+PREFIX	=	arm-eabi-
+AR	=	$(PREFIX)ar
+CC	=	$(PREFIX)gcc
+LD	=	$(PREFIX)gcc
+OBJCOPY	=	$(PREFIX)objcopy
+RANLIB	=	$(PREFIX)ranlib
+#*******************************************************************************
+
+ROOT = ..
+
+CPPFLAGS := \
+	-DFICL_WANT_LZ_SOFTCORE=0 \
+	-Dlinux \
+	-DNDS \
+	-DARM9 \
+	-I. \
+	-I$(ROOT)/include \
+	-I$(DEVKITPRO)/ficl \
+	-I$(DEVKITPRO)/libnds/include
+
+CFLAGS := \
+	-g -Wall -O2 \
+	-ffast-math -fomit-frame-pointer \
+	-march=armv5te -mtune=arm946e-s \
+	-mthumb -mthumb-interwork
+
+LIBS = \
+	$(ROOT)/libgpl/libgpl.a \
+	$(ROOT)/libxdr/libxdr.a \
+	$(DEVKITPRO)/ficl/libficl.a \
+	-L$(DEVKITPRO)/libnds/lib -ldswifi9 -lfat -lnds9 \
+	-L$(DEVKITARM)/arm-eabi/lib -lm
+
+LDFLAGS := \
+	-specs=ds_arm9.specs \
+	-mthumb -mthumb-interwork
+
+ARFLAGS = rv
+
+all::	$(LIBRARY).a $(PROGRAMS:=.nds)
+
+$(LIBRARY).a: $(OBJS)
+	$(RM) $@
+	$(AR) $(ARFLAGS) $@ $(OBJS)
+	$(RANLIB) $@
+
+finc.nds: StdIONDS_finc.o finc.o $(OBJS)
+	$(LD) $(LDFLAGS) -o finc.elf StdIONDS_finc.o finc.o $(OBJS) $(LIBS)
+	$(OBJCOPY) -O binary finc.elf finc.arm9
+	ndstool -c $@ -9 finc.arm9
+
+finc.o: finc.c
+	$(COMPILE.c) -Dmain=finc -o $@ $<
+
+StdIONDS_finc.o: $(ROOT)/libgpl/StdIONDS.c
+	$(COMPILE.c) -DDEVKITPRO_R24 -DPROGRAM=finc -DSPROGRAM=\"finc\" -DDSWIFI -o $@ $<
+
+nicl.nds: StdIONDS_nicl.o nicl.o $(OBJS)
+	$(LD) $(LDFLAGS) -o nicl.elf StdIONDS_nicl.o nicl.o $(OBJS) $(LIBS)
+	$(OBJCOPY) -O binary nicl.elf nicl.arm9
+	ndstool -c $@ -9 nicl.arm9
+
+nicl.o: nicl.c
+	$(COMPILE.c) -Dmain=nicl -o $@ $<
+
+StdIONDS_nicl.o: $(ROOT)/libgpl/StdIONDS.c
+	$(COMPILE.c) -DDEVKITPRO_R24 -DPROGRAM=nicl -DSPROGRAM=\"nicl\" -DDSWIFI -o $@ $<
+
+clean::
+	-$(RM) *.o $(LIBRARY).a *.nds *.arm9 *.elf

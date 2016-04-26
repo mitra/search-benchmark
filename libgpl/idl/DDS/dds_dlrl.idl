@@ -1,0 +1,543 @@
+
+
+#include "dds_dcps.idl"
+
+// =============
+// DLRL Entities
+// =============
+
+module DLRL {
+
+
+// Type definitions
+// =================
+
+// Scope of action
+// ---------------
+
+enum ReferenceScope {
+	SIMPLE_CONTENT_SCOPE,           // only the reference content
+	REFERENCED_CONTENTS_SCOPE       // + referenced contents
+	};
+
+enum ObjectScope {
+	SIMPLE_OBJECT_SCOPE,            // only the object
+	CONTAINED_OBJECTS_SCOPE,        // + contained objects
+	RELATED_OBJECTS_SCOPE           // + all related objects
+	};
+
+// State of the underlying infrastructure
+// --------------------------------------
+
+enum DCPSState {
+    INITIAL,
+    REGISTERED,
+    ENABLED
+    };
+
+// Usage of the Cache
+
+enum CacheUsage {
+    READ_ONLY,
+    WRITE_ONLY,
+    READ_WRITE
+    };
+
+// State of an object
+// ------------------
+
+typedef unsigned short ObjectState;
+
+// Read part of the state
+const ObjectState R_NEW         = 0x0001 << 0;
+const ObjectState R_MODIFIED    = 0x0001 << 1;
+const ObjectState R_READ        = 0x0001 << 2;
+const ObjectState R_DELETED     = 0x0001 << 3;
+
+// Write part of the state
+const ObjectState W_CREATED     = 0x0001 << 8;
+const ObjectState W_CHANGED     = 0x0001 << 9;
+const ObjectState W_WRITTEN     = 0x0001 << 10;
+const ObjectState W_DESTROYED   = 0x0001 << 11;
+const ObjectState W_DELETED     = 0x0001 << 12;
+
+
+// OID
+// ---
+
+typedef unsigned long DLRLOid;
+
+// Miscellanous
+// ------------
+
+typedef sequence<string>    stringSeq;
+typedef sequence<long>      longSeq;
+
+
+// Exceptions
+// ==========
+
+exception DCPSError {};
+exception BadHomeDefinition {};
+exception BadParameter {};
+exception NotFound {};
+exception ReadOnlyMode {};
+exception WriteOnlyMode {};
+
+
+// DLRL Entities
+// =============
+
+/********************
+ * Forward References
+ ********************/
+
+valuetype ObjectRoot;
+typedef sequence<ObjectRoot> ObjectRootSeq;
+
+local interface ObjectHome;
+typedef sequence<ObjectHome> ObjectHomeSeq;
+
+local interface Selection;
+typedef sequence<Selection> SelectionSeq;
+
+local interface CacheAccess;
+typedef sequence<CacheAccess> CacheAccessSeq;
+
+local interface Cache;
+
+/************
+ * ObjectLink
+ ************/
+
+struct ObjectLink {
+    DLRLOid         oid;
+    unsigned long   home_index;
+    };
+typedef sequence<ObjectLink> ObjectLinkSeq;
+
+
+/*****************************************************
+ * ObjectListener : Root for Listeners to be attached to 
+ *      Home objects
+ *****************************************************/
+
+local interface ObjectListener {
+    /***
+     * will be generated with the proper Foo type 
+     * in the derived FooObjectListener
+     *
+    boolean on_object_created (
+        in ObjectRoot the_object);
+    boolean on_object_modified (
+        in ObjectRoot the_object);
+    boolean on_object_deleted (
+        in ObjectRoot the_object);
+     *
+     ***/
+    };
+
+/**********************************************************
+ * SelectionListener : Root for Listeners to be attached to 
+ *      Selection objects
+ **********************************************************/
+
+local interface SelectionListener {
+    /***
+     * will be generated with the proper Foo type 
+     * in the derived FooSelectionListener
+     *
+    void on_object_in (
+        in ObjectRoot the_object);
+    void on_object_modified (
+        in ObjectRoot the_object);
+    void on_object_out (
+        in ObjectRoot the_object);
+     *
+     ***/
+    };
+    
+
+/********************************************************
+ * CacheListener : Listener to be associated with a Cache
+ ********************************************************/
+
+local interface CacheListener {
+    void begin_updates (
+        in long update_round);
+    void end_updates (
+        in long update_round);
+    };
+
+
+
+/******************************************
+ * ObjectRoot : Root fot the shared objects
+ ******************************************/
+
+local interface ObjectRootOperations { 
+
+    // Attributes
+    // ----------
+    readonly attribute  DLRLOid             oid;
+    readonly attribute  ObjectState         state;
+    readonly attribute  unsigned short      count;
+    readonly attribute  ObjectHome          owner;
+    readonly attribute  CacheAccess         cache;
+
+    // Operations
+    // ---------- 
+    void destroy ()
+        raises (
+            DCPSError,
+            ReadOnlyMode);
+    boolean is_modified (
+        in ObjectScope scope);
+    void clean_modified(
+        in ObjectScope scope);
+    ObjectLink clone (
+        in CacheAccess access,
+        in ObjectScope scope)
+        raises (
+            ReadOnlyMode);
+    };
+
+valuetype ObjectRoot supports ObjectRootOperations {
+    private DLRLOid     m_oid;
+    private string      m_class_name;
+    };
+
+/***********************************************
+ * ObjectFilter: Root of all the objects filters 
+ ***********************************************/
+
+ local interface ObjectFilter {
+    /***
+     * Following method will be generated properly typed
+     * in the generated derived classes
+     *
+    boolean check_object (
+        in ObjectRoot an_object);
+    ObjectRootSeq filter (
+        in ObjectRootSeq objects);
+     *
+     ***/
+    };
+
+/***********************************************************
+ * ObjectQuery : Specialisation of the above to make a Query
+ ***********************************************************/
+
+ local interface ObjectQuery {
+
+    // Atributes
+    // ---------
+    readonly attribute string           expression;
+    readonly attribute stringSeq        parameters;
+
+    //--- Methods
+    boolean set_query (
+        in string expression,
+        in stringSeq parameters);
+    boolean set_parameters (
+        in stringSeq parameters);
+    };
+
+
+
+/**********************************************************
+ * Selection : Root of all the selections (dynamic subsets)
+ **********************************************************/
+
+local interface Selection {
+ 
+    // Attributes
+    // ----------
+    readonly attribute boolean              auto_refresh;
+
+    /***
+     * Following attributes will be generated properly typed 
+     * in the generated derived classes
+     *
+    readonly attribute ObjectFilter         filter;
+    readonly attribute ObjectRootSeq        members;
+    readonly attribute SelectionListener    listener;
+     *
+     */
+
+    // Operations
+    // ----------
+    /***
+     * Following method will be generated properly typed
+     * in the generated derived classes
+     *
+    void attach_listener (
+        in SelectionListener listener);
+     *
+     ***/
+    void detach_listener ();
+    void refresh ();
+    };
+
+
+/*********************************************************************
+ * ObjectHome : Root of all the representatives of applicative classes
+ *********************************************************************/
+
+local interface ObjectHome {
+    
+    // Attributes
+    // ----------
+    readonly attribute string           name;   // Shared name of the class
+    readonly attribute string           filter;
+    readonly attribute ObjectScope      notification_scope;
+    readonly attribute ObjectHome       parent;
+    readonly attribute ObjectHomeSeq    children;
+
+    /***
+     * Following attributes will be generated properly typed 
+     * in the generated derived classes
+     *
+    readonly attribute ObjectRootSeq extent;
+    readonly attribute SelectionSeq selections;
+    readonly attribute ObjectListener listener;
+     *
+     ***/
+
+    // Operations
+    // ----------
+    string get_topic_name (
+        in string attribute_name)
+        raises (
+            BadParameter);
+    void set_filter (
+        in string filter)
+        raises (
+            BadParameter);
+            
+    // --- Listener management
+    
+    /***
+     * Following methods will be generated properly typed
+     * in the generated derived classes
+     *
+    void attach_lister (
+        in ObjectListener listener);
+     *
+     ***/
+    void detach_listener ();
+
+    // --- Selection management
+
+    /***
+     * Following methods will be generated properly typed
+     * in the generated derived classes
+     *
+    Selection create_selection (
+        in ObjectFilter filter,
+        in boolean auto_refresh)
+        raises (
+            BadParameter);
+    void delete_selection (
+        in Selection a_selection)
+        raises (
+            BadParameter);    
+     *
+     ***/
+
+    // --- Object management
+
+    /***
+     * Following methods will be generated properly typed
+     * in the generated derived classes
+     *
+    ObjectRoot create_object(
+        in CacheAccess access)
+        raises (
+            ReadOnlyMode);
+    ObjectRoot find_object (
+        in DLRLOid  oid,
+        in CacheAccess access)
+        raises (
+            NotFound);
+     *
+     ***/
+    };
+
+/**************************************
+ * Reference and Collectiion operations
+ **************************************/
+
+local interface ReferenceOperations {
+    void reset();  
+    boolean is_modified (
+        in ReferenceScope scope);
+    void clean_modified (
+        in ReferenceScope scope);
+    };
+
+local interface CollectionOperations {
+    long length();
+    boolean is_modified (
+        in ReferenceScope scope);
+    long how_many_added ();    
+    long how_many_removed ();
+    void clean_modified (
+        in ReferenceScope scope);
+    };
+ 
+local interface ListOperations : CollectionOperations {
+    longSeq which_added ();
+    void remove ();
+    };
+
+local interface StrMapOperations : CollectionOperations {
+    stringSeq which_added ();
+    stringSeq get_all_keys ();
+    };
+
+local interface IntMapOperations : CollectionOperations {
+    longSeq which_added ();
+    longSeq get_all_keys ();
+    };
+ 
+    
+
+/***************************
+ * Value Bases for Relations
+ ***************************/
+
+valuetype RefRelation supports ReferenceOperations {
+    private ObjectLink      ref;
+    };
+
+valuetype ListRelation supports ListOperations {
+    private ObjectLinkSeq   refs;
+    };
+
+valuetype StrMapRelation supports StrMapOperations {
+    struct Item {
+        string      key;
+        ObjectLink  ref;
+        };
+    typedef sequence <Item> ItemSeq;
+
+    private ItemSeq   refs;
+    };
+
+valuetype IntMapRelation supports IntMapOperations {
+    struct Item {
+        long        key;
+        ObjectLink  ref;
+        };
+    typedef sequence <Item> ItemSeq;
+
+    private ItemSeq   refs;
+    };
+
+
+/************************************************************
+ * CacheAccess : Manager of the access of a subset of objects
+ *      (cloned) from a Cache
+ ************************************************************/
+
+local interface CacheAccess {
+
+    // Attributes
+    // ==========
+    readonly attribute CacheUsage           cache_usage;
+    readonly attribute Cache                owner;
+    readonly attribute ObjectLinkSeq        refs;
+
+    // Operations
+    // ==========
+    void refresh ()
+        raises (
+            DCPSError);
+    void write ()
+        raises (
+            ReadOnlyMode,
+            DCPSError);
+    void purge ();
+    ObjectRoot deref (
+        in ObjectLink ref);
+    }; 
+
+
+/***********************************************************************
+ * Cache : Manager of a set of related objects
+ *      is associated to one DCPS::Publisher and/or one DCPS::Subscriber
+ ***********************************************************************/
+
+local interface Cache : CacheAccess {
+
+    // Attributes
+    // ----------    
+    readonly attribute DCPSState            pubsub_state;
+    readonly attribute DCPS::Publisher      publisher;
+    readonly attribute DCPS::Subscriber     subscriber;
+    readonly attribute boolean              updates_enabled;
+    readonly attribute ObjectHomeSeq        homes;
+    readonly attribute CacheAccessSeq       sub_accesses;
+    readonly attribute CacheListener        listener;
+
+    // Operations
+    // ----------
+
+    //-- Infrastructure management
+    void register_all_for_pubsub()
+        raises (
+            BadHomeDefinition,
+            DCPSError);
+    void enable_all_for_pubsub()
+        raises (
+            DCPSError);
+
+    // -- Home management;
+    void register_home (
+        in ObjectHome  a_home)
+        raises (
+            BadHomeDefinition);
+    ObjectHome find_home (
+        in string class_name)
+        raises (
+            NotFound);
+
+    // -- Listener Management
+    void attach_listener (
+        in CacheListener listener);
+    void detach_listener ();
+
+    // --- Updates management
+    void enable_updates ();
+    void disable_updates ();
+
+    // --- CacheAccess Management
+    CacheAccess create_access (
+        in CacheUsage purpose)
+        raises (
+            ReadOnlyMode);
+    void delete_cache (
+        in CacheAccess access)
+        raises (
+            BadParameter);
+
+    // --- Object management
+    void load ()
+        raises (
+            DCPSError);
+    };
+
+/************************************************
+ * CacheFactory : Factory to create Cache objects
+ ************************************************/
+
+local interface CacheFactory {
+    Cache create_cache (
+        in CacheUsage cache,
+        in  DCPS::DomainParticipant domain)
+        raises (
+            DCPSError);
+    };
+};
+

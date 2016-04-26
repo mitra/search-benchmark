@@ -1,0 +1,645 @@
+#define DOMAINID_TYPE_NATIVE        long
+#define HANDLE_TYPE_NATIVE          long
+#define HANDLE_NIL_NATIVE           0
+
+module DCPS {
+    typedef DOMAINID_TYPE_NATIVE        DomainId_t;
+    typedef HANDLE_TYPE_NATIVE    InstanceHandle_t;
+
+    typedef long ReturnCode_t;
+    typedef long QosPolicyId_t;
+    typedef sequence<string> StringSeq;
+    
+    struct Duration_t { 
+	long sec; 
+	unsigned long nanosec; 
+    };
+
+    struct Time_t {
+	long sec; 
+	unsigned long nanosec; 
+    };
+
+    // ----------------------------------------------------------------------
+    // Pre-defined values
+    // ----------------------------------------------------------------------
+    const InstanceHandle_t HANDLE_NIL = HANDLE_NIL_NATIVE;
+    
+    // ----------------------------------------------------------------------
+    // Return codes
+    // ----------------------------------------------------------------------
+    const ReturnCode_t RETCODE_OK                   = 0;
+    const ReturnCode_t RETCODE_ERROR                = 1;
+    const ReturnCode_t RETCODE_UNSUPPORTED          = 2;
+    const ReturnCode_t RETCODE_BAD_PARAMETER        = 3;
+    const ReturnCode_t RETCODE_PRECONDITION_NOT_MET = 4;
+    const ReturnCode_t RETCODE_OUT_OF_RESOURCES     = 5;
+    const ReturnCode_t RETCODE_NOT_ENABLED          = 6;
+    const ReturnCode_t RETCODE_IMMUTABLE_POLICY     = 7;
+    const ReturnCode_t RETCODE_INCONSISTENT_POLICY  = 8;
+
+    
+    // ----------------------------------------------------------------------
+    // Status to support listeners and conditions
+    // ----------------------------------------------------------------------
+
+    typedef unsigned long StatusKind;
+    typedef unsigned long StatusKindMask;    // bit-mask StatusKind
+
+    const StatusKind INCONSISTENT_TOPIC_STATUS                  = 0x0001 << 0;
+    const StatusKind OFFERED_DEADLINE_MISSED_STATUS             = 0x0001 << 1;
+    const StatusKind REQUESTED_DEADLINE_MISSED_STATUS           = 0x0001 << 2;
+    const StatusKind OFFERED_INSTANCE_DEADLINE_MISSED_STATUS    = 0x0001 << 3;
+    const StatusKind REQUESTED_INSTANCE_DEADLINE_MISSED_STATUS  = 0x0001 << 4;
+    const StatusKind OFFERED_INCOMPATIBLE_QOS_STATUS            = 0x0001 << 5;
+    const StatusKind REQUESTED_INCOMPATIBLE_QOS_STATUS          = 0x0001 << 6;
+    const StatusKind SAMPLE_LOST_STATUS                         = 0x0001 << 7;
+    const StatusKind SAMPLE_REJECTED_STATUS                     = 0x0001 << 8;
+    const StatusKind DATA_ON_READERS_STATUS                     = 0x0001 << 9;
+    const StatusKind DATA_AVAILABLE_STATUS                      = 0x0001 << 10;
+
+    
+    struct InconsistentTopicStatus {
+        long total_count;
+        long total_count_change;
+    };
+
+    struct SampleLostStatus {
+	long total_count;
+        long total_count_change;
+    };
+
+    enum SampleRejectedStatusKind {
+	REJECTED_BY_INSTANCE_LIMIT,
+	REJECTED_BY_TOPIC_LIMIT
+    };
+
+    struct SampleRejectedStatus {
+	long                         total_count;
+        long                         total_count_change;
+	SampleRejectedStatusKind     last_reason;
+	InstanceHandle_t             last_instance_handle;
+    };
+
+
+    struct LivelinessLostStatus { 
+	long total_count;
+	long total_count_chnage;
+    };
+
+    struct LivelinessChangedStatus {
+	long active_count;
+	long inactive_count;
+	long active_count_change;
+	long inactive_count_change;
+    };
+
+    struct OfferedDeadlineMissedStatus {
+	long total_count;
+        long total_count_change;
+	InstanceHandle_t last_instance_handle;
+    };
+
+    struct RequestedDeadlineMissedStatus {
+	long total_count;
+        long total_count_change;
+	InstanceHandle_t last_instance_handle;
+    };
+
+    struct QosPolicyCount {
+	QosPolicyId_t policy_id;
+	long count;
+    };
+
+    struct OfferedIncompatibleQosStatus {
+	long total_count;
+	long total_count_change;
+	QosPolicyId_t last_policy_id;
+	sequence<QosPolicyCount> policies;
+    };
+
+    struct RequestedIncompatibleQosStatus {
+	long total_count;
+	long total_count_change;
+	QosPolicyId_t last_policy_id;
+	sequence<QosPolicyCount> policies;
+    };
+
+    // ----------------------------------------------------------------------
+    // Listeners 
+    // ----------------------------------------------------------------------
+
+    interface Listener;
+    interface Entity;
+    interface Topic;
+    interface ContentFilteredTopic;
+    interface MultiTopic;
+    interface DataWriter;
+    interface DataReader;
+    interface Subscriber;
+    interface Publisher;
+
+    typedef sequence<Topic> TopicSeq;
+    typedef sequence<DataReader> DataReaderSeq;
+    
+    interface Listener {};
+    
+    interface TopicListener : Listener {
+	void on_inconsistent_topic(in Topic topic, 
+				   in InconsistentTopicStatus status);
+    };
+
+    interface DataWriterListener : Listener {
+	void on_offered_deadline_missed(in DataWriter writer, 
+					in OfferedDeadlineMissedStatus status);
+	void on_offered_incompatible_qos(in DataWriter writer, 
+					 in OfferedIncompatibleQosStatus status);
+	void on_liveliness_lost(in DataWriter writer, 
+				in LivelinessLostStatus status);
+     };
+
+    interface PublisherListener : DataWriterListener {
+    };
+
+    interface DataReaderListener : Listener {
+	void on_requested_deadline_missed(in DataReader reader,
+					  in RequestedDeadlineMissedStatus status);
+	void on_requested_incompatble_qos(in DataReader reader,
+					  in RequestedIncompatibleQosStatus status);
+	void on_sample_rejected(in DataReader reader, 
+				in SampleRejectedStatus status);
+	void on_lineliness_changed(in DataReader reader,
+				   in LivelinessChangedStatus status);
+	void on_data_available(in DataReader reader);
+    };
+
+    interface SubscriberListener : DataReaderListener {
+	void on_sample_lost(in Subscriber subs, 
+			    in SampleLostStatus status);
+	void on_data_on_readers(in Subscriber subs);
+    };
+
+
+    interface DomainParticipantListener : TopicListener, 
+	                                  PublisherListener, 
+	                                  SubscriberListener {
+    };
+
+
+    // ----------------------------------------------------------------------
+    // Conditions
+    // ----------------------------------------------------------------------
+
+    interface Condition {
+	boolean get_trigger_value();
+    };
+    
+    typedef sequence<Condition> ConditionSeq;
+
+    interface WaitSet {
+	ReturnCode_t wait(out ConditionSeq active_conditions, 
+			  in Duration_t timeout);
+	ReturnCode_t attach_condition(in Condition cond);
+	ReturnCode_t detach_condition(in Condition cond);
+    };
+
+    interface GuardCondition : Condition {
+        void set_trigger_value(in boolean value);
+    };
+
+    interface StatusCondition : Condition {
+        readonly attribute StatusKindMask enabled_statuses;
+        ReturnCode_t set_enabled_statuses(in StatusKindMask mask);
+    };
+
+    // Instance states to support reads
+    typedef unsigned long SampleStateKind;
+    typedef sequence <SampleStateKind> SampleStateSeq; 
+    const SampleStateKind READ_SAMPLE_STATE       = 0x0001 << 0;
+    const SampleStateKind NOT_READ_SAMPLE_STATE   = 0x0001 << 1;
+   
+    // This is a bit-mask SampleStateKind
+    typedef unsigned long SampleStateMask;
+    const SampleStateMask ANY_SAMPLE_STATE        = 0xffff;
+
+    // Sample states to support reads
+    typedef unsigned long LifecycleStateKind;
+    typedef sequence<LifecycleStateKind> LifecycleStateSeq;
+    const LifecycleStateKind NEW_LIFECYCLE_STATE           = 0x0001 << 0;
+    const LifecycleStateKind MODIFIED_LIFECYCLE_STATE      = 0x0001 << 1;
+    const LifecycleStateKind DISPOSED_LIFECYCLE_STATE      = 0x0001 << 2;
+    const LifecycleStateKind NO_WRITERS_LIFECYCLE_STATE    = 0x0001 << 3;
+   
+    // This is a bit-mask LifecycleStateKind
+    typedef unsigned long LifecycleStateMask;
+    const LifecycleStateMask ANY_LIFECYCLE_STATE           = 0xffff;
+
+
+    interface ReadCondition : Condition {
+  	readonly attribute LifecycleStateMask lifecycle_state_mask;
+        readonly attribute SampleStateMask sample_state_mask;
+    };
+
+    interface QueryCondition : ReadCondition {
+	readonly attribute string  query_expression;
+	attribute StringSeq query_arguments;
+    };
+
+
+    // ----------------------------------------------------------------------
+    // Qos
+    // ----------------------------------------------------------------------
+    const string USERDATA_QOS_POLICY_NAME           = "UserData";
+    const string DURABILITY_QOS_POLICY_NAME         = "Durability";
+    const string PRESENTATION_QOS_POLICY_NAME       = "Presentation";
+    const string DEADLINE_QOS_POLICY_NAME           = "Deadline";
+    const string LATENCYBUDGET_QOS_POLICY_NAME      = "LatencyBudget";
+    const string OWNERSHIP_QOS_POLICY_NAME          = "Ownership";
+    const string OWNERSHIPSTRENGTH_QOS_POLICY_NAME  = "OwnershipStrength";
+    const string LIVELINESS_QOS_POLICY_NAME         = "Liveliness";
+    const string TIMEBASEDFILTER_QOS_POLICY_NAME    = "TimeBasedFilter";
+    const string PARTITION_QOS_POLICY_NAME          = "Partition";
+    const string RELIABILITY_QOS_POLICY_NAME        = "Reliability";
+    const string DESTINATIONORDER_QOS_POLICY_NAME   = "DestinationOrder";
+    const string HISTORY_QOS_POLICY_NAME            = "History";
+    const string RESOURCELIMITS_QOS_POLICY_NAME     = "ResourceLimits";
+
+    const QosPolicyId_t USERDATA_QOS_POLICY_ID           = 1;
+    const QosPolicyId_t DURABILITY_QOS_POLICY_ID         = 2;
+    const QosPolicyId_t PRESENTATION_QOS_POLICY_ID       = 3;
+    const QosPolicyId_t DEADLINE_QOS_POLICY_ID           = 4;
+    const QosPolicyId_t LATENCYBUDGET_QOS_POLICY_ID      = 5;
+    const QosPolicyId_t OWNERSHIP_QOS_POLICY_ID          = 6;
+    const QosPolicyId_t OWNERSHIPSTRENGTH_QOS_POLICY_ID  = 7;
+    const QosPolicyId_t LIVELINESS_QOS_POLICY_ID         = 8;
+    const QosPolicyId_t TIMEBASEDFILTER_QOS_POLICY_ID    = 9;
+    const QosPolicyId_t PARTITION_QOS_POLICY_ID          = 10;
+    const QosPolicyId_t RELIABILITY_QOS_POLICY_ID        = 11;
+    const QosPolicyId_t DESTINATIONORDER_QOS_POLICY_ID   = 12;
+    const QosPolicyId_t HISTORY_QOS_POLICY_ID            = 13;
+    const QosPolicyId_t RESOURCELIMITS_QOS_POLICY_ID     = 14;
+
+    struct UserDataQosPolicy {
+	sequence<octet> data;
+    };
+
+    enum DurabilityQosPolicyKind {
+	VOLATILE_DURABILITY_QOS,
+	TRANSIENT_DURABILITY_QOS,
+	PERSISTENT_DURABILITY_QOS
+    };
+    struct DurabilityQosPolicy {
+	DurabilityQosPolicyKind kind;
+    };
+
+    enum PresentationQosPolicyAccessScopeKind {
+	INSTANCE_PRESENTATION_QOS,
+	TOPIC_PRESENTATION_QOS,
+	GROUP_PRESENTATION_QOS
+    };
+    struct PresentationQosPolicy {
+        PresentationQosPolicyAccessScopeKind access_scope;
+	boolean coherent_access;
+	boolean ordered_access;
+    };
+
+    struct DeadlineQosPolicy {
+	Duration_t period;
+    };
+
+    struct LatencyBudgetQosPolicy {
+	Duration_t duration;
+    };
+
+    enum OwnershipQosPolicyKind {
+	SHARED_OWNERSHIP_QOS,
+	EXCLUSIVE_OWNERSHIP_QOS
+    };
+    struct OwnershipQosPolicy {
+	OwnershipQosPolicyKind kind;
+    };
+
+    struct OwnershipStrengthQosPolicy {
+	long value;
+    };
+
+    enum LivelinessQosPolicyKind {
+	AUTOMATIC_LIVELINESS_QOS,
+	MANUAL_BY_PARTICIPANT_LIVELINESS_QOS,
+	MANUAL_BY_TOPIC_LIVELINESS_QOS
+    };
+
+    struct LivelinessQosPolicy {
+	LivelinessQosPolicyKind kind;
+	Duration_t lease_duration;
+
+    };
+
+    struct TimeBasedFilterQosPolicy {
+	Duration_t minimum_separation;
+    };
+
+    struct PartitionQosPolicy {
+	StringSeq name;
+    };
+
+    enum ReliabilityQosPolicyKind {
+	BEST_EFFORT_RELIABILITY_QOS,
+        RELIABLE_RELIABILITY_QOS
+    };
+
+    struct ReliabilityQosPolicy {
+	ReliabilityQosPolicyKind kind;
+    };
+
+   enum DestinationOrderQosPolicyKind {
+        BY_RECEPTION_TIMESTAMP_DESTINATIONORDER_QOS,
+        BY_SOURCE_TIMESTAMP_DESTINATIONORDER_QOS
+    };
+    struct DestinationOrderQosPolicy {
+	DestinationOrderQosPolicyKind kind;
+    };
+
+    enum HistoryQosPolicyKind {
+	KEEP_LAST_HISTORY_QOS,
+	KEEP_ALL_HISTORY_QOS
+    };
+    struct HistoryQosPolicy {
+	HistoryQosPolicyKind kind;
+	long depth;
+    };
+
+    struct ResourceLimitsQosPolicy {
+	long max_samples;
+	long max_instances;
+	long max_samples_per_instance;
+    };
+
+   struct DomainParticipantQos {
+	UserDataQosPolicy  user_data;
+    };
+
+    struct TopicQos {
+	DurabilityQosPolicy           durability;
+	DeadlineQosPolicy             deadline;
+	LatencyBudgetQosPolicy        delay_laxity;
+	LivelinessQosPolicy           liveliness;
+	ReliabilityQosPolicy          reliability;
+	DestinationOrderQosPolicy     destination_order;
+	HistoryQosPolicy              history;
+	ResourceLimitsQosPolicy       resource_limits;
+
+	OwnershipQosPolicy            ownership;
+    };
+
+    struct DataWriterQos {
+	DurabilityQosPolicy           durability;
+	DeadlineQosPolicy             deadline;
+	LatencyBudgetQosPolicy        delay_laxity;
+	LivelinessQosPolicy           liveliness;
+	ReliabilityQosPolicy          reliability;
+	DestinationOrderQosPolicy     destination_order;
+	HistoryQosPolicy              history;
+	ResourceLimitsQosPolicy       resource_limits;
+
+	UserDataQosPolicy             user_data;
+	OwnershipStrengthQosPolicy    ownership_strength;
+    };
+
+    struct PublisherQos {
+	UserDataQosPolicy             user_data;
+	PresentationQosPolicy         presentation;
+	PartitionQosPolicy            partition;
+    };
+
+    struct DataReaderQos {
+	DurabilityQosPolicy           durability;
+	DeadlineQosPolicy             deadline;
+	LatencyBudgetQosPolicy        delay_laxity;
+	LivelinessQosPolicy           liveliness;
+	ReliabilityQosPolicy          reliability;
+	DestinationOrderQosPolicy     destination_order;
+	HistoryQosPolicy              history;
+	ResourceLimitsQosPolicy       resource_limits;
+
+	UserDataQosPolicy             user_data;
+	TimeBasedFilterQosPolicy      time_based_filter;
+    };
+
+    struct SubscriberQos {
+	UserDataQosPolicy             user_data;
+	PresentationQosPolicy         presentation;
+	PartitionQosPolicy            partition;
+    };
+
+    // ----------------------------------------------------------------------
+    interface Entity {
+// 	ReturnCode_t set_qos(in DataWriterQos qos);
+// 	void get_qos(inout DataWriterQos qos);
+// 	ReturnCode_t set_listener(in Listener l, in StatusKindMask mask);
+// 	Listener get_listener();
+
+	ReturnCode_t enable();
+	void assert_liveliness();
+
+	StatusCondition create_statuscondition(in StatusKindMask mask);
+	ReturnCode_t delete_statuscondition(in StatusCondition the_condition);
+	
+        StatusKindMask get_status_changes();
+    };
+    
+    // ----------------------------------------------------------------------
+    interface DomainParticipant : Entity {
+	// Factory interfaces
+	Publisher create_publisher(in PublisherQos qos, 
+				   in PublisherListener listener);
+	ReturnCode_t delete_publisher(in Publisher p);
+
+	Subscriber create_subscriber(in SubscriberQos qos,
+				     in SubscriberListener listener);
+	ReturnCode_t delete_subscriber(in Subscriber s);
+	Subscriber get_builtin_subscriber();
+
+	Topic create_topic(in string topic_name, in string type_name,
+			   in TopicQos qos, 
+			   in TopicListener listener);
+
+	ReturnCode_t delete_topic(in Topic topic);
+	Topic lookup_topic(in string topic_name, in Duration_t timeout);
+
+	ContentFilteredTopic create_contentfilteredtopic(in string name,
+					       in Topic related_topic,
+					       in string filter_expression,
+					       in StringSeq filter_parameters);
+
+	ReturnCode_t delete_contentfiltered(
+			       in ContentFilteredTopic a_contentfilteredtopic);
+
+	MultiTopic create_multitopic(in string name,
+				     in string type_name, 
+				     in string subscription_expression,
+				     in StringSeq expression_parameters);
+
+	ReturnCode_t delete_multitopic(in MultiTopic a_multitopic);
+
+	ReturnCode_t set_qos(in DomainParticipantQos qos);
+	void get_qos(inout DomainParticipantQos qos);
+
+	ReturnCode_t ignore_participant(in InstanceHandle_t handle);
+	ReturnCode_t ignore_topic(in InstanceHandle_t handle);
+	ReturnCode_t ignore_publication(in InstanceHandle_t handle);
+	ReturnCode_t ignore_subscription(in InstanceHandle_t handle);
+
+	readonly attribute DomainId_t domainId;
+    };
+
+    interface DomainParticipantFactory {
+	DomainParticipant create_participant(in DomainId_t domainId, 
+					     in DomainParticipantQos qos, 
+					     in DomainParticipantListener listener);
+	ReturnCode_t delete_participant(in DomainParticipant a_participant);
+    };
+      
+    interface DataType {
+	// ReturnCode_t register_type(in DomainParticipant domain, in string type_name);
+    };
+
+    // ----------------------------------------------------------------------
+    interface TopicDescription {
+	readonly attribute string type_name;
+    };
+	
+    interface Topic : Entity, TopicDescription {
+	readonly attribute string name;
+
+	// Access the status
+	readonly attribute InconsistentTopicStatus inconsistent_topic_status;
+    };
+
+    interface ContentFilteredTopic : TopicDescription {
+	readonly attribute string filter_expression;
+	attribute StringSeq expression_parameters;
+    };
+
+    interface MultiTopic : TopicDescription {
+	readonly attribute string topic_expression;
+	attribute StringSeq expression_parameters;
+    };
+
+    // ----------------------------------------------------------------------
+    interface Publisher : Entity {
+	DataWriter create_datawriter(in Topic t, in DataWriterQos qos,
+				     in DataWriterListener listener);
+	ReturnCode_t delete_datawriter(in DataWriter a_datawriter);
+	DataWriter lookup_datawriter(in string topic_name);
+
+	ReturnCode_t set_qos(in PublisherQos qos);
+	void get_qos(inout PublisherQos qos);
+
+	void suspend_publications();
+	void resume_publications();
+
+	ReturnCode_t begin_coherent_changes();
+	ReturnCode_t end_coherent_changes();
+
+    };
+
+    interface DataWriter : Entity {
+// 	InstanceHandle_t register_instance(in Data instance_data);
+// 	ReturnCode_t unregister_instance(in Data instance_data, 
+// 					 in InstanceHandle_t  handle);
+// 	ReturnCode_t write(in Data instance_data, in InstanceHandle_t handle);
+// 	ReturnCode_t write_w_timestamp(in Data instance_data, 
+// 				       in InstanceHandle_t handle, 
+// 				       in Time_t source_timestamp);
+// 	ReturnCode_t dispose(in Data instance_data, 
+// 			     in InstanceHandle_t instance_handle);
+// 	ReturnCode_t dispose_w_timestamp(in Data instance_data, 
+// 					 in InstanceHandle_t instance_handle, 
+// 					 in Time_t source_timestamp);
+// 	ReturnCode_t get_key(inout Data key_holder, in InstanceHandle_t handle);
+
+	ReturnCode_t set_qos(in DataWriterQos qos);
+	void get_qos(inout DataWriterQos qos);
+
+	// Access the status
+	readonly attribute LivelinessLostStatus liveliness_lost_status;
+	readonly attribute OfferedDeadlineMissedStatus offered_deadline_missed_status;
+	readonly attribute OfferedIncompatibleQosStatus offered_incompatible_qos_status;
+    };
+
+    // ----------------------------------------------------------------------
+    interface Subscriber : Entity {
+	DataReader create_datareader(in TopicDescription topic,
+				     in DataReaderQos qos,
+				     in DataReaderListener listener);
+	ReturnCode_t delete_datareader(in DataReader a_datareader);
+	DataReader lookup_datareader(in string topic_name);
+	ReturnCode_t get_datareaders(out DataReaderSeq readers,
+				     in LifecycleStateMask l_state,
+				     in SampleStateMask s_state);
+        void notify_datareaders(in LifecycleStateMask l_state,
+				in SampleStateMask s_state);
+
+	ReturnCode_t set_qos(in SubscriberQos qos);
+	void get_qos(inout SubscriberQos qos);
+
+        ReturnCode_t begin_access();
+	ReturnCode_t end_access();
+
+	readonly attribute SampleLostStatus sample_lost_status; 
+    };
+
+    interface DataReader : Entity {
+// 	ReturnCode_t read(out DataSeq received_data,
+// 			  out SampleInfoSeq info_seq,
+// 			  in SampleStateMask s_mask, 
+// 			  in LifecycleStateMask l_mask);
+
+// 	ReturnCode_t take(out DataSeq received_data,
+// 			  out SampleInfoSeq info_seq,
+// 			  in SampleStateMask s_mask, 
+// 			  in LifecycleStateMask l_mask);
+
+// 	ReturnCode_t read_w_condition(out DataSeq received_data,
+// 				      out SampleInfo info_seq,
+// 				      in ReadCondition condition);
+
+// 	ReturnCode_t take_w_condition(out DataSeq received_data,
+// 				      out SampleInfo info_seq,
+// 				      in ReadCondition condition);
+
+// 	ReturnCode_t get_key(inout Data key_holder, in InstanceHandle_t handle);
+
+
+	ReadCondition create_readcondition(in SampleStateMask mask, 
+					   in LifecycleStateMask l_mask);
+
+	QueryCondition 
+	    create_querycondition(in SampleStateMask mask, 
+				  in LifecycleStateMask l_mask,
+				  in string query,
+				  in StringSeq query_parameters);
+
+	ReturnCode_t delete_readcondition(in ReadCondition condition);
+
+	ReturnCode_t set_qos(in DataReaderQos qos);
+	void get_qos(inout DataReaderQos qos);
+
+	readonly attribute SampleRejectedStatus sample_rejected_status;
+	readonly attribute LivelinessChangedStatus liveliness_changed_status;
+	readonly attribute RequestedDeadlineMissedStatus requested_deadline_missed_status;
+	readonly attribute RequestedIncompatibleQosStatus requested_incompatible_qos_status;
+    };
+    
+    struct SampleInfo {
+	SampleStateKind  sample_state;
+	LifecycleStateKind lifecycle_state;
+	Time_t source_timestamp;
+	InstanceHandle_t instance_handle;
+    };
+
+    typedef sequence<SampleInfo> SampleInfoSeq;
+};
+
+

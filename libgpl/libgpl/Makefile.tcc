@@ -1,0 +1,129 @@
+# $Id: Makefile.tcc,v 1.8 2012/09/29 01:16:24 alex Exp $
+#
+
+LIBRARY = libgpl.a
+
+SRCS =	\
+	aperror.c \
+	bio_util.c \
+	bit_util.c \
+	bmw_util.c \
+	bomx_util.c \
+	coli_util.c \
+	comx_util.c \
+	cosn_util.c \
+	crlf_util.c \
+	dae_util.c \
+	damx_util.c \
+	ddmx_util.c \
+	drs_util.c \
+	f1750a_util.c \
+	ffs.c \
+	fnm_util.c \
+	ftw_util.c \
+	get_util.c \
+	gimx_util.c \
+	gsc_util.c \
+	hash_util.c \
+	id3_util.c \
+	ieee_util.c \
+	iiop_util.c \
+	iox_util.c \
+	lemx_util.c \
+	lfn_util.c \
+	list_util.c \
+	log_util.c \
+	meo_util.c \
+	msq_util.c \
+	net_util.c \
+	nft_proc.c \
+	nft_util.c \
+	nob_util.c \
+	nvl_util.c \
+	nvp_util.c \
+	opt_util.c \
+	port_util.c \
+	rex_util.c \
+	rex_util_y.c \
+	sem_util.c \
+	shm_util.c \
+	skt_util.c \
+	str_util.c \
+	tcp_util.c \
+	tpl_util.c \
+	ts_util.c \
+	tv_util.c \
+	udp_util.c \
+	utf_util.c \
+	vim_util.c \
+	wcs_util.c \
+	xnet_util.c \
+	xqt_util.c
+
+OBJS = $(SRCS:.c=.o)
+
+ROOT = ..
+
+IDLH2C = idlh2c.py
+CORBA_IDL_C = gimx_idl.c.new
+CORBA_IDL_H = $(ROOT)/include/gimx_idl.h
+BONOBO_IDL_C = bomx_idl.c.new
+BONOBO_IDL_H = $(ROOT)/include/bomx_idl.h
+DAIS_IDL_C = damx_idl.c.new
+DAIS_IDL_H = $(ROOT)/include/damx_idl.h
+DDS_IDL_C = ddmx_idl.c.new
+DDS_IDL_H = $(ROOT)/include/ddmx_idl.h
+LECIS_IDL_C = lemx_idl.c.new
+LECIS_IDL_H = $(ROOT)/include/lemx_idl.h
+
+ARFLAGS = rv
+CC = tcc
+CFLAGS = -g
+CPPFLAGS = \
+	-DHAVE_STDBOOL_H=0 \
+	-I. \
+	-I$(ROOT)/include \
+	-I/usr/include/gdbm
+RANLIB = ranlib
+RM = rm -f
+YACC = bison
+YACCFLAGS = -y
+
+all::	$(LIBRARY)
+
+$(LIBRARY): $(OBJS)
+	$(RM) $@
+	$(AR) $(ARFLAGS) $@ $(OBJS)
+	$(RANLIB) $@
+
+rex_util_y.c:  rex_util_y.y
+	$(YACC) $(YACCFLAGS) rex_util_y.y
+	$(RM) $@
+	sed -e 's/extern char \*malloc(), \*realloc();//' \
+            -e 's/yy/rr/g' -e 's/YY/RR/g'  y.tab.c  > $@
+	$(RM) y.tab.c y.tab.h
+
+$(CORBA_IDL_C):  $(CORBA_IDL_H) $(IDLH2C)
+	-$(RM) $@
+	$(IDLH2C) --preDefs $(ROOT)/include/gimx_post.py --prefix=gimx $(CORBA_IDL_H) >$@
+
+$(BONOBO_IDL_C):  $(BONOBO_IDL_H) $(IDLH2C)
+	-$(RM) $@
+	$(IDLH2C) --preDefs $(ROOT)/include/bomx_post.py --prefix=bomx $(BONOBO_IDL_H) >$@
+
+$(DAIS_IDL_C):  $(DAIS_IDL_H) $(IDLH2C)
+	-$(RM) $@
+	$(IDLH2C) --preDefs $(ROOT)/include/damx_post.py --prefix=damx $(DAIS_IDL_H) >$@
+
+$(DDS_IDL_C):  $(DDS_IDL_H) $(IDLH2C)
+	-$(RM) $@
+	$(IDLH2C) --preDefs $(ROOT)/include/ddmx_post.py --prefix=ddmx $(DDS_IDL_H) >$@
+
+$(LECIS_IDL_C):  $(LECIS_IDL_H) $(IDLH2C)
+	-$(RM) $@
+	$(IDLH2C) --preDefs $(ROOT)/include/lemx_post.py --prefix=lemx $(LECIS_IDL_H) >$@
+
+clean::
+	-$(RM) $(OBJS) $(LIBRARY)
+	-$(RM) rex_util_y.c y.output y.tab.c y.tab.h
+	-$(RM) $(CORBA_IDL_C) $(BONOBO_IDL_C) $(DAIS_IDL_C) $(DDS_IDL_C) $(LECIS_IDL_C)

@@ -1,0 +1,99 @@
+'------------------------------------------------------------------------------
+'FILE DESCRIPTION: CSoft Workspace Macros
+'------------------------------------------------------------------------------
+
+
+const myLibraries = "libxdr libgpl libepl"
+
+
+function BuildOrder
+'DESCRIPTION: Return project names in the order in which they should be built.
+	dim proj, projs
+	projs = myLibraries
+	for each proj in Application.Projects
+		if (instr (myLibraries, proj.Name) = 0) then
+			if (proj.Type = "Build") then
+				projs = projs & " " & proj.Name
+			end if
+		end if
+	next
+	BuildOrder = split (projs)
+end function
+
+
+function GetConfig (byref proj, name)
+'DESCRIPTION: Return project's "name" configuration.
+    dim  conf
+	for each conf in proj.Configurations
+		if (instr (conf.Name, name) > 0) then
+			set GetConfig = conf
+			exit function
+		end if
+	next
+	GetConfig = null
+end function
+
+
+function ProjectAKA (name)
+'DESCRIPTION: Return project identified by name.
+	dim proj
+	for each proj in Application.Projects
+		if (proj.Name = name) then
+			set ProjectAKA = proj
+			exit function
+		end if
+	next
+	ProjectAKA = null
+end function
+
+
+function QueryConf
+'DESCRIPTION: Return user-specified build configuration.
+	if (MsgBox ("DEBUG configuration?", vbYesNo) = vbYes) then
+	    QueryConf = "Win32 Debug"
+	elseif (MsgBox ("RELEASE configuration?", vbYesNo) = vbYes) then
+	    QueryConf = "Win32 Release"
+	else
+		QueryConf = ""
+	end if
+end function
+
+
+sub BuildAll()
+'DESCRIPTION: Build software for all projects.
+	dim conf, name, proj
+	conf = QueryConf ()
+	if (MsgBox ("Build " & conf & " versions of" & chr(13) & chr(10) & join (BuildOrder ()) & "?", vbOKCancel) = vbCancel) then
+		exit sub
+	end if
+	for each name in BuildOrder ()
+		set proj = ProjectAKA (name)
+		if (isnull (proj)) then
+			MsgBox "Project " & name & " not found"
+		else
+			set Application.ActiveProject = proj
+			Application.Build (GetConfig (proj, conf))
+		end if
+	next
+	MsgBox "Done!"
+end sub
+
+
+sub CleanAll()
+'DESCRIPTION: Delete all object and executable files for all projects.
+	dim conf, name, proj
+	conf = QueryConf ()
+	if (MsgBox ("Clean " & conf & " versions of" & chr(13) & chr(10) & join (BuildOrder ()) & "?", vbOKCancel) = vbCancel) then
+		exit sub
+	end if
+	for each name in BuildOrder ()
+		set proj = ProjectAKA (name)
+		if (isnull (proj)) then
+			MsgBox "Project " & name & " not found"
+		else
+			set Application.ActiveProject = proj
+			Application.Clean (GetConfig (proj, conf))
+		end if
+	next
+	MsgBox "Done!"
+end sub

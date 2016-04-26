@@ -1,0 +1,323 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{6de9f04b-32ea-47d3-bcf2-bc3aeb085ccd}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{4cc3ceec-d0ed-4225-ac4b-1a01fb41da6a}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="aperror.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="bio_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="bit_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="bmw_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="coli_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="comx_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cosn_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crlf_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="damx_idl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="damx_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ddmx_idl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ddmx_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="drs_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="f1750a_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ffs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="fnm_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="get_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="getopt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gimx_idl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gimx_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gsc_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hash_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="id3_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ieee_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iiop_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iox_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lemx_idl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lemx_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lfn_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="list_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="log_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="meo_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="net_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="nft_proc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="nft_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="nvl_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="nvp_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="opt_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="port_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rex_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rex_util_y.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="skt_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="str_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tcp_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tpl_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ts_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tv_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="udp_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="utf_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vim_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="wcs_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="xnet_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\aperror.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bio_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bit_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bmw_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\coli_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\comx_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\cosn_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\crlf_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\damx_idl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\damx_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ddmx_idl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ddmx_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\drs_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\f1750a_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ftw_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\get_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gimx_idl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gimx_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gsc_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\hash_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\id3_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ieee_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\iiop_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\iox_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\lemx_idl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\lemx_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\lfn_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\list_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\log_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\meo_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\net_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="nft_proc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\nft_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\nvl_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\nvp_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\opt_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\port_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\pragmatics.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="rex_internals.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\skt_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\str_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\tcp_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\tpl_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ts_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\tv_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\udp_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\utf_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\vim_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\wcs_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\xnet_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

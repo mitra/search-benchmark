@@ -1,0 +1,5462 @@
+//File: ReadMe.txt
+//March 2002 - this file has been updated due to Issue 4979 (CosTime Module).
+//
+// This file (or archive) contains the OMG IDL for CORBAservices. 
+//
+// The contents of the IDL files that appear in the CORBAservices manual were 
+//  modified to implement the recently adopted OMG IDL Style Guide (OMG 
+//  document ab/98-06-03), including module naming conventions and required 
+//  contents of files. These changes did not affect the contained IDL; that is,
+//  no identifiers were changed to match the guide since those would be 
+//  incompatible changes.
+//  
+// In preparation for publication of this set of IDL files, there have been 
+//  changes to the services IDL to take care of typos and syntax errors in 
+//  the published IDL.
+//
+// This IDL is compilable when split into individual files.
+//
+// If this "Readme.txt" file is contained within a text file, the rest of the 
+//  text file is a concatenation of the many files making up the CORBAservices.
+//  Each file starts at a line beginning with "//File: ". The order of services
+//  is that of the their position in the CORBAservices manual. Within a given 
+//  service, the files appear in alphabetical order. (See below for exact order.)
+// 
+// If this "Readme.txt" file is within a .zip archive, the remainder of the archive
+//  is made up of directories, one for each of the services. Each of those 
+//  directories contains the modules/files making up that service.
+//
+// The IDL files contain tabs which are optimized for reading or printing with 
+//  tab stops every four characters.
+//
+// Some IDL compilers might not support the IDL data type of "long long" because
+//  their hardware or target language doesn't deal with such a type. The default
+//  assumed in this package is the CORBA 2.2 specification, which has the data
+//  type. For compilers not supporting it, some modules in this this package 
+//  have workarounds. Such modules must be compiled with the preprocessor 
+//  definition NOLONGLONG. These modules have a comment at the beginning of the 
+//  module explaining this. 
+//
+// In CORBA 2.3, which introduces some new keywords, new IDL lexical rules
+//  specify that any identifier which conflicts with a new keyword
+//  can continue to be used by pre-pending the identifier with an underscore
+//  "_". The IDL compiler will recognize such constructs as an identifier 
+//  without the underscore. That means that all generated stubs and skeletons 
+//  use the identifier as before, maintaining compatibility for code. Of course,
+//  the IDL must be changed, but this is a small task compared to changing all
+//  generated code. Some of the previously defined services have some 
+//  identifiers that clash with the new keywords. To use CORBA 2.3 IDL, these 
+//  identifiers must have have the underscore pre-pended. This is called an 
+//  "Escaped Identifier". An escaped identifier is illegal in pre-CORBA 2.3.
+//  Since this package is intended to be used with all versions of CORBA IDL
+//  compilers, the technique to avoid problems is to use #ifdef pre-processor
+//  constructs: use the ordinary identifier for pre-CORBA 2.3 and use the 
+//  escaped identifier for CORBA 2.3 and later. The default in this package 
+//  is to expect CORBA V2.3, so that the preprocessor definition 
+//  NO_ESCAPED_IDENTIFIERS must be specified if you compile with a 
+//  pre-CORBA 2.3 IDL compiler. Several modules in this package are affected; 
+//  each has a comment at the beginning of the module explaining this.
+//
+//
+// The services included at the time of publication of this version of the IDL 
+//  are the following, listed in order of appearance in the CORBAservices book.
+//  Under each service is a list of the modules associated with that service.
+//
+//    Naming 
+//       CosNaming.idl
+//       Lname-library.idl
+//    Event 
+//       CosEventChannelAdmin.idl
+//       CosEventComm.idl
+//       CosTypedEventChannelAdmin.idl
+//       CosTypedEventComm.idl
+//    Persistent Object 
+//       CosPersistenceDDO.idl
+//       CosPersistenceDS_CLI.idl
+//       CosPersistencePDS.idl
+//       CosPersistencePDS_DA.idl
+//       CosPersistencePID.idl
+//       CosPersistencePO.idl
+//       CosPersistencePOM.idl
+//    Life Cycle 
+//       CosLifeCycle.idl
+//       CosLifeCycleContainment.idl
+//       CosLifeCycleReference.idl
+//       CosCompoundLifeCycle.idl
+//       LifeCycleService.idl
+//    Concurrency Control 
+//       ConcurrencyControl.idl
+//    Externalization 
+//       CosExternalization.idl
+//       CosExternalizationContainment.idl
+//       CosExternalizationReference.idl
+//       CosStream.idl
+//    Relationship 
+//       CosContainment.idl
+//       CosGraphs.idl
+//       CosObjectIdentity.idl
+//       CosReference.idl
+//       CosRelationships.idl
+//    Transaction 
+//       CosTransactions.idl
+//       CosTSPortability.idl
+//    Query 
+//       CosQuery.idl
+//       CosQueryCollection.idl
+//    Licensing 
+//       CosLicensingManager.idl
+//    Property 
+//       CosPropertyService.idl
+//    Time 
+//       CosTime.idl
+//       CosTimerEvent.idl
+//       TimeBase.idl
+//    Security 
+//       DCE_CIOPSecurity.idl
+//       NRService.idl
+//       SECIOP.idl
+//       Security.idl
+//       SecurityAdmin.idl
+//       SecurityLevel1.idl
+//       SecurityLevel2.idl
+//       SecurityReplaceable.idl
+//       SSLIOP.idl
+//    Object Trader 
+//       CosTrading.idl
+//       CosTradingDynamic.idl
+//       CosTradingRepos.idl
+//    Object Collections 
+//       CosCollection.idl
+
+//File: CosNaming.idl
+//The only module of the Naming Service
+
+#ifndef _COS_NAMING_IDL_
+#define _COS_NAMING_IDL_
+#pragma prefix "omg.org"
+
+module CosNaming
+{
+	typedef string Istring;
+	struct NameComponent {
+		Istring id;
+		Istring kind;
+	};
+
+	typedef sequence <NameComponent> Name;
+
+	enum BindingType {nobject, ncontext};
+
+	struct Binding {
+		Name        binding_name;
+		BindingType binding_type;                                  
+	};
+
+	typedef sequence <Binding> BindingList;                                         
+
+
+	interface BindingIterator;
+
+	interface NamingContext {
+
+		enum NotFoundReason {	missing_node, 
+								not_context, 
+								not_object};
+        
+		exception NotFound { 	NotFoundReason why;
+								Name rest_of_name;};
+
+		exception CannotProceed {   NamingContext cxt;
+									Name rest_of_name;};
+                                                                                                        
+		exception InvalidName{};                                                                        
+		exception AlreadyBound {};
+		exception NotEmpty{};
+
+		void bind(	in Name n, 
+					in Object obj)             
+			raises(	NotFound, 
+					CannotProceed, 
+					InvalidName, 
+					AlreadyBound);
+		void rebind(in Name n, 
+					in Object obj)   
+			raises(	NotFound, 
+					CannotProceed, 
+					InvalidName);
+		void bind_context(	in Name n, 
+							in NamingContext nc)               
+			raises(	NotFound, 
+					CannotProceed, 
+					InvalidName, 
+					AlreadyBound);
+		void rebind_context(in Name n, 
+							in NamingContext nc)     
+			raises(	NotFound, 
+					CannotProceed, 
+					InvalidName);
+		Object resolve (in Name n)
+			raises(	NotFound, 
+					CannotProceed, 
+					InvalidName);
+		void unbind(in Name n)
+			raises(	NotFound, 
+					CannotProceed, 
+					InvalidName);
+		NamingContext new_context();
+		NamingContext bind_new_context(in Name n)
+			raises(	NotFound, 
+					AlreadyBound, 
+					CannotProceed, 
+					InvalidName);
+		void destroy( )
+			raises(NotEmpty);
+		void list (	in unsigned long how_many, 
+					out BindingList bl, 
+					out BindingIterator bi);
+        };
+
+	interface BindingIterator {
+		boolean next_one(out Binding b);
+		boolean next_n(	in unsigned long how_many, 
+						out BindingList bl);
+		void destroy();
+	};
+
+};
+#endif /* ifndef _COS_NAMING_IDL_ */
+
+//File: Lname-library.idl
+//Listed with the Naming Service, but not part of it.
+//
+// The Lname-Library interfaces are defined in PIDL, not IDL.
+// They are included here to provide a complete listing of what
+//  is in the Naming Service and to test the syntax. It actually 
+//  compiles as IDL.
+// This libary is optional and NOT a part of CosNaming. It should
+//  not be included in the CosNaming.idl file.
+// The Naming Service suggests that a vendor may wish to provide
+//  a language specific libary corresponding to this PIDL. This file
+//  might then serve as the basis of what the language libary 
+//  looks like. 
+// The interfaces defined here are NOT intended to be CORBA objects.
+// It should be noted that there is no module name associated 
+//  because this file is not intended to be "#include"d in any
+//  other .idl file. For that reason, there are also no guards.
+
+#include <CosNaming.idl>
+
+	interface LNameComponent {                                                              // PIDL
+		exception NotSet{};
+		string get_id() 
+			raises(NotSet);
+		void set_id(in string i);
+		string get_kind() 
+			raises(NotSet);
+		void set_kind(in string k);
+			void destroy();
+	};
+	interface LName {                                                                               // PIDL
+		exception NoComponent{};
+		exception OverFlow{};
+		exception InvalidName{};                                
+		LName insert_component(	in unsigned long i, 
+								in LNameComponent n) 
+			raises(	NoComponent, 
+					OverFlow);
+		LNameComponent get_component(in unsigned long i)
+			raises(NoComponent);                           
+		LNameComponent delete_component(in unsigned long i)
+			raises(NoComponent);                           
+		unsigned long num_components();
+		boolean equal(in LName ln);
+		boolean less_than(in LName ln);
+		CosNaming::Name to_idl_form()
+			raises(InvalidName);                             
+		void from_idl_form(in CosNaming::Name n);
+		void destroy();
+	};
+
+//Note: end of option LName PIDL
+
+//File: CosEventChannelAdmin.idl
+//Part of the Event Service
+
+#ifndef _COS_EVENT_CHANNEL_ADMIN_IDL_
+#define _COS_EVENT_CHANNEL_ADMIN_IDL_
+
+#include <CosEventComm.idl>
+
+#pragma prefix "omg.org"
+
+module CosEventChannelAdmin {
+
+ 	exception AlreadyConnected {};
+	exception TypeError {};
+
+	interface ProxyPushConsumer: CosEventComm::PushConsumer {
+		void connect_push_supplier(
+				in CosEventComm::PushSupplier push_supplier)
+			raises(AlreadyConnected);
+	};
+
+	interface ProxyPullSupplier: CosEventComm::PullSupplier {
+		void connect_pull_consumer(
+				in CosEventComm::PullConsumer pull_consumer)
+			raises(AlreadyConnected);
+	};
+
+	interface ProxyPullConsumer: CosEventComm::PullConsumer {
+		void connect_pull_supplier(
+				in CosEventComm::PullSupplier pull_supplier)
+			raises(AlreadyConnected,TypeError);
+	};
+
+	interface ProxyPushSupplier: CosEventComm::PushSupplier {
+		void connect_push_consumer(
+				in CosEventComm::PushConsumer push_consumer)
+			raises(AlreadyConnected, TypeError);
+	};
+
+	interface ConsumerAdmin {
+		ProxyPushSupplier obtain_push_supplier();
+		ProxyPullSupplier obtain_pull_supplier();
+	};
+
+	interface SupplierAdmin {
+		ProxyPushConsumer obtain_push_consumer();
+		ProxyPullConsumer obtain_pull_consumer();
+	};
+
+	interface EventChannel {
+		ConsumerAdmin for_consumers();
+		SupplierAdmin for_suppliers();
+		void destroy();
+	};
+};
+#endif /* ifndef _COS_EVENT_CHANNEL_ADMIN_IDL_ */
+//File: CosEventComm.idl
+//Part of the Event Service
+
+#ifndef _COS_EVENT_COMM_IDL_
+#define _COS_EVENT_COMM_IDL_
+#pragma prefix "omg.org"
+
+module CosEventComm {
+
+	exception Disconnected{};
+
+	interface PushConsumer {
+		void push (in any data) raises(Disconnected);
+		void disconnect_push_consumer(); 
+	};
+
+    interface PushSupplier {
+		void disconnect_push_supplier();
+	};
+
+	interface PullSupplier {
+		any pull () raises(Disconnected);
+		any try_pull (out boolean has_event) 
+			raises(Disconnected);
+		void disconnect_pull_supplier(); 
+	};
+
+	interface PullConsumer {
+		void disconnect_pull_consumer();
+	};
+
+};
+#endif /* ifndef _COS_EVENT_COMM_IDL_ */
+//File: CosTypedEventChannelAdmin.idl
+//Part of the Event Service
+
+#ifndef _COS_TYPED_EVENT_CHANNEL_ADMIN_IDL_
+#define _COS_TYPED_EVENT_CHANNEL_ADMIN_IDL_
+
+#include <CosEventChannelAdmin.idl>
+#include <CosTypedEventComm.idl>
+
+#pragma prefix "omg.org"
+
+module CosTypedEventChannelAdmin { 	 
+
+	exception InterfaceNotSupported {}; 
+	exception NoSuchImplementation {}; 
+	typedef string Key; 
+
+	interface TypedProxyPushConsumer : 	
+			CosEventChannelAdmin::ProxyPushConsumer, 	
+			CosTypedEventComm::TypedPushConsumer  { }; 
+
+	interface TypedProxyPullSupplier :
+ 			CosEventChannelAdmin::ProxyPullSupplier, 	
+			CosTypedEventComm::TypedPullSupplier { }; 
+
+	interface TypedSupplierAdmin : 
+			CosEventChannelAdmin::SupplierAdmin {
+		TypedProxyPushConsumer obtain_typed_push_consumer(
+ 				in Key supported_interface) 		    
+			raises(InterfaceNotSupported); 
+		CosEventChannelAdmin::ProxyPullConsumer obtain_typed_pull_consumer ( 
+				in Key uses_interface) 		   
+			 raises(NoSuchImplementation); 
+	}; 
+
+	interface TypedConsumerAdmin :
+			CosEventChannelAdmin::ConsumerAdmin { 
+		TypedProxyPullSupplier obtain_typed_pull_supplier( 
+				in Key supported_interface) 		    
+			raises (InterfaceNotSupported); 
+		CosEventChannelAdmin::ProxyPushSupplier obtain_typed_push_supplier( 
+				in Key uses_interface) 		    
+			raises(NoSuchImplementation); 
+	}; 
+
+	interface TypedEventChannel { 
+		TypedConsumerAdmin for_consumers(); 		
+		TypedSupplierAdmin for_suppliers();                
+		void destroy (); 
+	}; 
+};
+
+#endif /* ifndef _COS_TYPED_EVENT_CHANNEL_ADMIN_IDL_ */
+//File: CosTypedEventComm.idl
+//Part of the Event Service
+
+#ifndef _COS_TYPED_EVENT_COMM_IDL_
+#define _COS_TYPED_EVENT_COMM_IDL_
+
+#include <CosEventComm.idl>
+
+#pragma prefix "omg.org"
+
+module CosTypedEventComm {
+
+	interface TypedPushConsumer : CosEventComm::PushConsumer {
+		Object get_typed_consumer(); 
+	};
+
+	interface TypedPullSupplier : CosEventComm::PullSupplier { 		 
+		Object get_typed_supplier();
+	};
+
+}; 
+
+#endif /* ifndef _COS_TYPED_EVENT_COMM_IDL_ */
+//File: CosPersistenceDDO.idl
+//Part of the Persistence Service
+
+#ifndef _COS_PERSISTENCE_DDO_IDL_
+#define _COS_PERSISTENCE_DDO_IDL_
+
+#include <CosPersistencePID.idl>
+
+#pragma prefix "omg.org"
+
+module CosPersistenceDDO {
+
+	interface DDO {
+		attribute string object_type;
+		attribute CosPersistencePID::PID p;
+		short add_data();
+		short add_data_property (in short data_id);
+		short get_data_count();
+		short get_data_property_count (in short data_id);
+		void get_data_property (in short data_id,
+			in short property_id,
+			out string property_name,
+			out any property_value);
+		void set_data_property (in short data_id,
+			in short property_id,
+			in string property_name,
+			in any property_value);
+		void get_data (in short data_id,
+			out string data_name,
+			out any data_value);
+		void set_data (in short data_id,
+			in string data_name,
+			in any data_value);
+	};
+};
+#endif /* ifndef _COS_PERSISTENCE_DDO_IDL_ */
+//File: CosPersistenceDS_CLI.idl
+//Part of the Persistence Service
+
+#ifndef _COS_PERSISTENCE_DS_CLI_IDL_
+#define _COS_PERSISTENCE_DS_CLI_IDL_
+
+#include <CosPersistenceDDO.idl>
+
+#pragma prefix "omg.org"
+
+module CosPersistenceDS_CLI {
+	interface UserEnvironment {
+		void set_option (in long option,in any value);
+		void get_option (in long option,out any value);
+		void release();
+	};
+
+	interface Connection {
+		void set_option (in long option,in any value);
+		void get_option (in long option,out any value);
+	};
+
+	interface ConnectionFactory {
+		Connection create_object (
+			in UserEnvironment user_envir);
+	};
+
+	interface Cursor { 
+		void set_position (in long position,in any value);
+		CosPersistenceDDO::DDO fetch_object();
+	};
+
+	interface CursorFactory {
+		Cursor create_object (
+			in Connection a_connection);
+	};
+
+ 	interface PID_CLI : CosPersistencePID::PID {
+		attribute string datastore_id;
+		attribute string id;
+	};
+
+	interface Datastore_CLI {
+		void connect (in Connection a_connection,
+			in string datastore_id,
+			in string user_name,
+			in string authentication);
+		void disconnect (in Connection a_connection);
+		Connection get_connection (
+			in string datastore_id,
+			in string user_name);
+		void add_object (in Connection a_connection,
+			in CosPersistenceDDO::DDO data_obj);
+		void delete_object (
+			in Connection a_connection,
+			in CosPersistenceDDO::DDO data_obj);
+		void update_object (
+			in Connection a_connection,
+			in CosPersistenceDDO::DDO data_obj);
+		void retrieve_object(
+			in Connection a_connection,
+			in CosPersistenceDDO::DDO data_obj);
+		Cursor select_object(
+			in Connection a_connection,
+			in string key);
+		void transact (in UserEnvironment user_envir,
+			in short completion_type);
+		void assign_PID (in PID_CLI p);
+		void assign_PID_relative (
+			in PID_CLI source_pid,
+			in PID_CLI target_pid);
+		boolean is_identical_PID (
+			in PID_CLI pid_1,
+			in PID_CLI pid_2);
+		string get_object_type (in PID_CLI p);
+		void register_mapping_schema (in string schema_file); 
+		Cursor execute (in Connection a_connection,
+			in string command); 
+	};
+
+};
+#endif /* ifndef _COS_PERSISTENCE_DS_CLI_IDL_ */
+//File: CosPersistencePDS.idl
+//Part of the Persistence Service
+
+#ifndef _COS_PERSISTENCE_PDS_IDL_
+#define _COS_PERSISTENCE_PDS_IDL_
+#pragma prefix "omg.org"
+
+#include <CosPersistencePID.idl>
+
+#pragma prefix "omg.org"
+
+module CosPersistencePDS {
+
+	interface PDS {
+	PDS 	connect (in Object obj, 
+					 in CosPersistencePID::PID p);
+	void disconnect (in Object obj, 
+					 in CosPersistencePID::PID p);
+	void store (in Object obj, 
+				in CosPersistencePID::PID p);
+	void restore (in Object obj, 
+				  in CosPersistencePID::PID p);
+	void delete (in Object obj, 
+				 in CosPersistencePID::PID p);
+	};
+};
+
+#endif /* ifndef _COS_PERSISTENCE_PDS_IDL_ */
+//File: CosPersistencePDS_DA.idl
+//Part of the Persistence Service
+
+#ifndef _COS_PERSISTENCE_PDS_DA_IDL_
+#define _COS_PERSISTENCE_PDS_DA_IDL_
+
+#include <CosPersistencePDS.idl>
+
+#pragma prefix "omg.org"
+
+module CosPersistencePDS_DA {
+
+	typedef string DAObjectID;
+
+	interface PID_DA : CosPersistencePID::PID {
+		attribute DAObjectID oid;
+	};
+	
+	interface DAObject {
+		boolean dado_same(in DAObject d);
+		DAObjectID dado_oid();
+		PID_DA dado_pid();
+		void dado_remove();
+		void dado_free();
+	};
+
+	interface DAObjectFactory {
+		DAObject create();
+	};
+
+	interface DAObjectFactoryFinder {
+		DAObjectFactory find_factory(in string key);
+	};
+
+	interface PDS_DA : CosPersistencePDS::PDS {
+		DAObject get_data();
+		void set_data(in DAObject new_data);
+		DAObject lookup(in DAObjectID id);
+		PID_DA get_pid();
+		PID_DA get_object_pid(in DAObject dao);
+		DAObjectFactoryFinder data_factories();
+	};
+
+};
+#endif /* ifndef _COS_PERSISTENCE_PDS_DA_IDL_ */
+//File: CosPersistencePID.idl
+//Part of the Persistence Service
+
+#ifndef _COS_PERSISTENCE_PID_IDL_
+#define _COS_PERSISTENCE_PID_IDL_
+#pragma prefix "omg.org"
+
+module CosPersistencePID {
+
+	interface PID {
+		attribute string datastore_type;
+		string get_PIDString();
+	};
+
+};
+#endif /* ifndef _COS_PERSISTENCE_PID_IDL_ */
+//File: CosPersistencePO.idl
+//Part of the Persistence Service
+
+#ifndef _COS_PERSISTENCE_PO_IDL_
+#define _COS_PERSISTENCE_PO_IDL_
+
+#include <CosPersistencePDS.idl>
+
+#pragma prefix "omg.org"
+
+module CosPersistencePO {
+
+	interface PO {
+		attribute CosPersistencePID::PID p;
+		CosPersistencePDS::PDS connect (
+			in CosPersistencePID::PID p);
+		void disconnect (in CosPersistencePID::PID p);
+		void store (in CosPersistencePID::PID p);
+		void restore (in CosPersistencePID::PID p);
+		void delete (in CosPersistencePID::PID p);
+	};
+
+	interface SD {
+		void pre_store();
+		void post_restore();
+	};
+};
+#endif /* ifndef _COS_PERSISTENCE_PO_IDL_ */
+//File: CosPersistencePOM.idl
+//Part of the Persistence Service
+
+#ifndef _COS_PERSISTENCE_POM_IDL_
+#define _COS_PERSISTENCE_POM_IDL_
+
+#include <CosPersistencePDS.idl>
+
+#pragma prefix "omg.org"
+
+module CosPersistencePOM {
+
+	interface POM {
+		CosPersistencePDS::PDS connect (
+			in Object obj, 
+			in CosPersistencePID::PID p);
+		void disconnect (
+			in Object obj, 
+			in CosPersistencePID::PID p);
+		void store (
+			in Object obj, 
+			in CosPersistencePID::PID p);
+		void restore (
+			in Object obj, 
+			in CosPersistencePID::PID p);
+		void delete (
+			in Object obj, 
+			in CosPersistencePID::PID p);
+	};
+};
+
+#endif /* ifndef _COS_PERSISTENCE_POM_IDL_ */
+//File: CosCompoundLifeCycle.idl
+//Part of the LifeCycle Service
+
+#ifndef _COS_COMPOUND_LIFE_CYCLE_IDL_
+#define _COS_COMPOUND_LIFE_CYCLE_IDL_
+
+#include <CosLifeCycle.idl>
+#include <CosRelationships.idl>
+#include <CosGraphs.idl>
+
+#pragma prefix "omg.org"
+
+module CosCompoundLifeCycle {
+	interface OperationsFactory; 
+	interface Operations;
+	interface Node;
+	interface Role;
+	interface Relationship;
+	interface PropagationCriteriaFactory;
+	
+	enum Operation {copy, move, remove};
+
+	struct RelationshipHandle {
+		CosRelationships::Relationship the_relationship;
+		CosObjectIdentity::ObjectIdentifier constant_random_id;
+	};
+
+	interface OperationsFactory {
+		Operations create_compound_operations();
+	};
+
+	interface Operations {
+		Node copy (
+			in Node starting_node,
+			in CosLifeCycle::FactoryFinder there,
+			in CosLifeCycle::Criteria the_criteria)
+			raises (CosLifeCycle::NoFactory,
+					CosLifeCycle::NotCopyable,
+					CosLifeCycle::InvalidCriteria,
+					CosLifeCycle::CannotMeetCriteria);
+		void move (
+			in Node starting_node,
+			in CosLifeCycle::FactoryFinder there,
+			in CosLifeCycle::Criteria the_criteria)
+			raises (CosLifeCycle::NoFactory,
+					CosLifeCycle::NotMovable,
+					CosLifeCycle::InvalidCriteria,
+					CosLifeCycle::CannotMeetCriteria);
+		void remove (in Node starting_node)
+			raises (CosLifeCycle::NotRemovable);
+		void destroy();
+		};
+
+	interface Node : CosGraphs::Node {
+		exception NotLifeCycleObject {};
+		void copy_node ( 
+			in CosLifeCycle::FactoryFinder there,
+			in CosLifeCycle::Criteria the_criteria,
+			out Node new_node,
+			out Roles roles_of_new_node)
+			raises (CosLifeCycle::NoFactory,
+					CosLifeCycle::NotCopyable,
+					CosLifeCycle::InvalidCriteria,
+					CosLifeCycle::CannotMeetCriteria);
+		void move_node (
+			in CosLifeCycle::FactoryFinder there, 
+			in CosLifeCycle::Criteria the_criteria)
+			raises (CosLifeCycle::NoFactory,
+				CosLifeCycle::NotMovable,
+				CosLifeCycle::InvalidCriteria,
+				CosLifeCycle::CannotMeetCriteria);
+		void remove_node ()
+			raises (CosLifeCycle::NotRemovable);
+		CosLifeCycle::LifeCycleObject get_life_cycle_object()
+			raises (NotLifeCycleObject);
+		};
+
+	interface Role : CosGraphs::Role {
+		Role copy_role (
+			in CosLifeCycle::FactoryFinder there, 
+			in CosLifeCycle::Criteria the_criteria)
+			raises (CosLifeCycle::NoFactory,
+					CosLifeCycle::NotCopyable,
+					CosLifeCycle::InvalidCriteria,
+					CosLifeCycle::CannotMeetCriteria);
+		void move_role (
+			in CosLifeCycle::FactoryFinder there, 
+			in CosLifeCycle::Criteria the_criteria)
+			raises (CosLifeCycle::NoFactory,
+					CosLifeCycle::NotMovable,
+					CosLifeCycle::InvalidCriteria,
+					CosLifeCycle::CannotMeetCriteria);
+		CosGraphs::PropagationValue life_cycle_propagation (
+			in Operation op,
+			in RelationshipHandle rel,
+			in CosRelationships::RoleName to_role_name,
+			out boolean same_for_all);
+		};
+
+	interface Relationship : CosRelationships::Relationship {
+		
+		Relationship copy_relationship (
+			in CosLifeCycle::FactoryFinder there,
+			in CosLifeCycle::Criteria the_criteria,
+			in CosGraphs::NamedRoles new_roles)
+			raises (CosLifeCycle::NoFactory,
+					CosLifeCycle::NotCopyable,
+					CosLifeCycle::InvalidCriteria,
+					CosLifeCycle::CannotMeetCriteria);
+		void move_relationship (
+			in CosLifeCycle::FactoryFinder there,
+			in CosLifeCycle::Criteria the_criteria)
+			raises (CosLifeCycle::NoFactory,
+					CosLifeCycle::NotMovable,
+					CosLifeCycle::InvalidCriteria,
+					CosLifeCycle::CannotMeetCriteria);
+		CosGraphs::PropagationValue life_cycle_propagation (
+			in Operation op,
+			in CosRelationships::RoleName from_role_name,
+			in CosRelationships::RoleName to_role_name,
+			out boolean same_for_all);
+	};
+
+	interface PropagationCriteriaFactory {
+		CosGraphs::TraversalCriteria create(in Operation op);
+	};
+
+};
+
+#endif /* ifndef _COS_COMPOUND_LIFE_CYCLE_IDL_ */
+
+//File: CosLifeCycle.idl
+//Part of the LifeCycle Service
+// Note: if your IDL compiler does not yet support the 
+//   CORBA 2.3 Feature "Escaped Identifiers" (which provides 
+//   for the addition of new keywords to IDL, compile this 
+//   module with the preprocessor definition 
+//   "NO_ESCAPED_IDENTIFIERS". With many compilers this 
+//   would be done a qualifier on the command line, 
+//   something like -DNO_ESCAPED_IDENTIFIERS
+
+#ifndef _COS_LIFE_CYCLE_IDL_
+#define _COS_LIFE_CYCLE_IDL_
+
+#include <CosNaming.idl>
+
+#pragma prefix "omg.org"
+
+module CosLifeCycle{
+
+	typedef CosNaming::Name Key; 
+	typedef Object Factory;
+	typedef sequence <Factory> Factories;
+	typedef struct NVP {	 
+		CosNaming::Istring	name; 
+		any 				value; 
+	} NameValuePair;
+	typedef sequence <NameValuePair> Criteria;
+
+	exception NoFactory {
+		Key search_key;
+	};
+	exception NotCopyable { string reason; };
+	exception NotMovable { string reason; };
+	exception NotRemovable { string reason; };
+	exception InvalidCriteria{ Criteria invalid_criteria; };
+	exception CannotMeetCriteria { Criteria unmet_criteria;	};
+
+	interface FactoryFinder {
+		Factories find_factories(in Key factory_key)
+			raises(NoFactory);
+	};
+
+	interface LifeCycleObject {
+		LifeCycleObject copy(in FactoryFinder there, 
+							 in Criteria the_criteria)
+			raises(NoFactory, NotCopyable, InvalidCriteria,
+				 CannotMeetCriteria);
+		void move(in FactoryFinder there, 
+				  in Criteria the_criteria)
+			raises(NoFactory, NotMovable, InvalidCriteria,
+				 CannotMeetCriteria);
+		void remove()
+			raises(NotRemovable);
+	};
+
+	interface GenericFactory {		
+#ifdef NO_ESCAPED_IDENTIFIERS
+		boolean supports(in Key k);
+#else
+		boolean _supports(in Key k);
+#endif
+		Object create_object(			
+				in Key 			k, 
+				in Criteria		the_criteria) 				
+			raises (NoFactory, InvalidCriteria, 										
+				CannotMeetCriteria);
+	};
+};
+#endif /* ifndef _COS_LIFE_CYCLE_IDL_ */
+//File: CosLifeCycleContainment.idl
+//Part of the Lifecycle Service
+
+#ifndef _COS_LIFE_CYCLE_CONTAINMENT_IDL_
+#define _COS_LIFE_CYCLE_CONTAINMENT_IDL_
+
+#include <CosContainment.idl>
+#include <CosCompoundLifeCycle.idl>
+
+#pragma prefix "omg.org"
+
+module CosLifeCycleContainment {
+
+	interface Relationship : 
+			CosCompoundLifeCycle::Relationship,
+			CosContainment::Relationship {};
+
+	interface ContainsRole : 
+			CosCompoundLifeCycle::Role,
+			CosContainment::ContainsRole {};
+
+	interface ContainedInRole : 
+			CosCompoundLifeCycle::Role,
+			CosContainment::ContainedInRole {};
+};
+#endif /* ifndef _COS_LIFE_CYCLE_CONTAINMENT_IDL_ */
+//File: CosLifeCycleReference.idl
+//Part of the LifeCycle Service
+
+#ifndef _COS_LIFE_CYCLE_REFERENCE_IDL_
+#define _COS_LIFE_CYCLE_REFERENCE_IDL_
+
+#include <CosReference.idl>
+#include <CosCompoundLifeCycle.idl>
+
+#pragma prefix "omg.org"
+
+module CosLifeCycleReference {
+
+	interface Relationship : 
+			CosCompoundLifeCycle::Relationship,
+			CosReference::Relationship {};
+
+	interface ReferencesRole : 
+			CosCompoundLifeCycle::Role,
+			CosReference::ReferencesRole {};
+
+	interface ReferencedByRole : 
+			CosCompoundLifeCycle::Role,
+			CosReference::ReferencedByRole {};
+};
+
+#endif /* ifndef _COS_LIFE_CYCLE_REFERENCE_IDL_ */
+//File: LifeCycleService.idl
+// An Example LifeCycleService Module
+// Note: This is only an example of the LifeCycle service,
+//       and is NOT part of the LifeCycle service
+
+#ifndef _LIFE_CYCLE_SERVICE_IDL_
+#define _LIFE_CYCLE_SERVICE_IDL_
+
+#include <CosLifeCycle.idl> 
+
+#pragma prefix "omg.org"
+
+module LifeCycleService {
+
+	typedef sequence <CosLifeCycle::NameValuePair> PolicyList;
+	typedef sequence <CosLifeCycle::Key> Keys;
+	typedef sequence <CosLifeCycle::NameValuePair> PropertyList; 
+	typedef sequence <CosNaming::NameComponent> NameComponents;
+
+	interface LifeCycleServiceAdmin {
+
+		attribute PolicyList policies;
+
+		void bind_generic_factory(
+				in CosLifeCycle::GenericFactory gf,
+				in CosNaming::NameComponent name,
+				in Keys key_set,
+				in PropertyList other_properties)
+			raises (CosNaming::NamingContext::AlreadyBound, CosNaming::NamingContext::InvalidName);
+
+		void unbind_generic_factory(
+				in CosNaming::NameComponent name)
+			raises (CosNaming::NamingContext::NotFound, CosNaming::NamingContext::InvalidName);
+
+		CosLifeCycle::GenericFactory resolve_generic_factory(
+				in CosNaming::NameComponent name)
+			raises (CosNaming::NamingContext::NotFound, CosNaming::NamingContext::InvalidName);
+
+		NameComponents list_generic_factories();
+
+		boolean match_service (in CosLifeCycle::GenericFactory f);
+
+		string get_hint();
+
+		void get_link_properties(
+				in CosNaming::NameComponent name,
+				out Keys key_set,
+				out PropertyList other_properties)
+			raises (CosNaming::NamingContext::NotFound, CosNaming::NamingContext::InvalidName);
+	};
+
+};
+#endif /* ifndef _LIFE_CYCLE_SERVICE_IDL_ */
+//File: ConcurrencyControl.idl
+//The only module of the Concurrency Control Service
+
+#ifndef _COS_CONCURRENCY_CONTROL_IDL_
+#define _COS_CONCURRENCY_CONTROL_IDL_
+
+#include <CosTransactions.idl>
+
+#pragma prefix "omg.org"
+
+module CosConcurrencyControl {
+
+    enum lock_mode {
+        read,
+        write,
+        upgrade,
+        intention_read,
+        intention_write
+    };
+
+    exception LockNotHeld{};
+
+    interface LockCoordinator
+    {
+        void drop_locks();
+    };
+
+    interface LockSet
+    {
+        void lock(in lock_mode mode);
+        boolean try_lock(in lock_mode mode);
+
+        void unlock(in lock_mode mode)
+            raises(LockNotHeld);
+        void change_mode(in lock_mode held_mode,
+                         in lock_mode new_mode)
+           raises(LockNotHeld);
+        LockCoordinator get_coordinator(
+            in CosTransactions::Coordinator which);
+    };
+
+    interface TransactionalLockSet
+    {
+        void lock(in CosTransactions::Coordinator current,
+                  in lock_mode mode);
+        boolean try_lock(in CosTransactions::Coordinator current,
+                         in lock_mode mode);
+        void unlock(in CosTransactions::Coordinator current,
+                    in lock_mode mode)
+           raises(LockNotHeld);
+        void change_mode(in CosTransactions::Coordinator current,
+                         in lock_mode held_mode,
+                         in lock_mode new_mode)
+           raises(LockNotHeld);
+        LockCoordinator get_coordinator(
+            in CosTransactions::Coordinator which);
+    };
+
+    interface LockSetFactory
+    {
+        LockSet create();
+        LockSet create_related(in LockSet which);
+        TransactionalLockSet create_transactional();
+        TransactionalLockSet create_transactional_related(
+			in TransactionalLockSet which);
+    };
+};
+#endif /* ifndef _COS_CONCURRENCY_CONTROL_IDL_ */
+//File: CosExternalization.idl
+//Part of the Externalization Service
+
+#ifndef _COS_EXTERNALIZATION_IDL_
+#define _COS_EXTERNALIZATION_IDL_
+
+#include <CosLifeCycle.idl>
+#include <CosStream.idl>
+
+#pragma prefix "omg.org"
+
+module CosExternalization {
+	exception InvalidFileNameError{};
+	exception ContextAlreadyRegistered{};
+	interface Stream: CosLifeCycle::LifeCycleObject{
+		void externalize(
+			in CosStream::Streamable theObject);
+		CosStream::Streamable internalize( 
+			in CosLifeCycle::FactoryFinder there)
+			raises( CosLifeCycle::NoFactory,
+					CosStream::StreamDataFormatError );
+		void begin_context()
+			raises( ContextAlreadyRegistered);
+		void end_context(); 
+		void flush();
+	};
+	interface StreamFactory {
+		Stream create();
+	};
+	interface FileStreamFactory {
+		Stream create(
+			in string theFileName) 
+			raises( InvalidFileNameError );
+	};
+};
+#endif /* ifndef _COS_EXTERNALIZATION_IDL_ */
+//File: CosExternalizationContainment.idl
+//Part of the Externalization Service
+// modified from version 1.0 to use CosStream module 
+//     instead of CosCompoundExternalization
+
+#ifndef _COS_EXTERNALIZATION_CONTAINMENT_IDL_
+#define _COS_EXTERNALIZATION_CONTAINMENT_IDL_
+
+#include <CosContainment.idl>
+#include <CosStream.idl>
+
+#pragma prefix "omg.org"
+
+module CosExternalizationContainment {
+
+	interface Relationship : 
+		CosStream::Relationship,
+		CosContainment::Relationship {};
+
+	interface ContainsRole : 
+		CosStream::Role,
+		CosContainment::ContainsRole {};
+
+	interface ContainedInRole : 
+		CosStream::Role,
+		CosContainment::ContainedInRole {};
+};
+#endif /* ifndef _COS_EXTERNALIZATION_CONTAINMENT_IDL_*/
+//File: CosExternalizationReference.idl
+//Part of the Externalization Service
+// modified from version 1.0 to use CosStream module 
+//     instead of CosCompoundExternalization
+
+#ifndef _COS_EXTERNALIZATION_REFERENCE_IDL_
+#define _COS_EXTERNALIZATION_REFERENCE_IDL_
+
+#include <CosReference.idl>
+#include <CosStream.idl>
+
+#pragma prefix "omg.org"
+
+module CosExternalizationReference {
+
+	interface Relationship : 
+		CosStream::Relationship,
+		CosReference::Relationship {};
+
+	interface ReferencesRole : 
+		CosStream::Role,
+		CosReference::ReferencesRole {};
+
+	interface ReferencedByRole : 
+		CosStream::Role,
+		CosReference::ReferencedByRole {};
+};
+#endif /* ifndef _COS_EXTERNALIZATION_REFERENCE_IDL_ */
+//File: CosStream.idl
+//Part of the Externalization Service
+// Modified from version 1.0 to include the previous CosCompoundExternalization module
+
+#ifndef _COS_STREAM_IDL_
+#define _COS_STREAM_IDL_
+
+#include <CosLifeCycle.idl>
+#include <CosObjectIdentity.idl>
+#include <CosGraphs.idl>
+
+#pragma prefix "omg.org"
+
+module CosStream {
+	exception ObjectCreationError{};
+	exception StreamDataFormatError{};
+
+	interface StreamIO;
+	interface Node;
+	interface Role;
+	interface Relationship;
+
+	interface Streamable: 
+	  CosObjectIdentity::IdentifiableObject {
+		readonly attribute CosLifeCycle::Key external_form_id;
+		void externalize_to_stream(
+			in StreamIO		targetStreamIO);
+		void internalize_from_stream(
+			in StreamIO		sourceStreamIO,
+			in CosLifeCycle::FactoryFinder there) 
+			raises(	CosLifeCycle::NoFactory,
+					ObjectCreationError,
+					StreamDataFormatError );
+	};
+
+	interface StreamableFactory {
+		Streamable create_uninitialized();
+	};
+
+
+	interface StreamIO {
+ 		void write_string(in string aString);
+ 		void write_char(in char aChar);
+ 		void write_octet(in octet anOctet);
+ 		void write_unsigned_long(
+			in unsigned long anUnsignedLong);
+ 		void write_unsigned_short(
+			in unsigned short anUnsignedShort);
+ 		void write_long(in long aLong);
+ 		void write_short(in short aShort);
+ 		void write_float(in float aFloat);
+ 		void write_double(in double aDouble);
+ 		void write_boolean(in boolean aBoolean);
+ 		void write_object(in Streamable aStreamable);
+	 	void write_graph(in Node aNode);
+		string read_string() 
+			raises(StreamDataFormatError);
+		char read_char() 			
+			raises(StreamDataFormatError );
+		octet read_octet()
+			raises(StreamDataFormatError );
+		unsigned long read_unsigned_long() 
+			raises(StreamDataFormatError );
+		unsigned short read_unsigned_short()
+			raises(		StreamDataFormatError );
+		long read_long() 		
+			raises(StreamDataFormatError );
+		short read_short()
+			raises(StreamDataFormatError );
+		float read_float()
+			raises(StreamDataFormatError );
+		double read_double()
+			raises(StreamDataFormatError );
+		boolean read_boolean()
+			raises(StreamDataFormatError );
+		Streamable read_object(
+			in CosLifeCycle::FactoryFinder there,
+			in Streamable aStreamable)
+			raises(StreamDataFormatError );
+ 		void read_graph(
+	 		in Node starting_node,
+			in CosLifeCycle::FactoryFinder there)
+			raises(StreamDataFormatError );
+	};
+
+    // the following are required for compound externalization
+
+	struct RelationshipHandle {
+		CosRelationships::Relationship theRelationship;
+		CosObjectIdentity::ObjectIdentifier constantRandomId;
+	};
+
+	interface Node : CosGraphs::Node, CosStream::Streamable{
+		void externalize_node (in CosStream::StreamIO sio);
+		void internalize_node (in CosStream::StreamIO sio,
+			in CosLifeCycle::FactoryFinder there,
+			out Roles rolesOfNode)
+				raises ( CosLifeCycle::NoFactory);
+	};
+
+	interface Role : CosGraphs::Role {
+		void externalize_role (in CosStream::StreamIO sio); 
+		void internalize_role (in CosStream::StreamIO sio); 
+		CosGraphs::PropagationValue externalize_propagation (
+			in RelationshipHandle rel,
+			in CosRelationships::RoleName toRoleName,
+			out boolean sameForAll);
+	};
+
+	interface Relationship : CosRelationships::Relationship {
+		void externalize_relationship (
+			in CosStream::StreamIO sio);
+		void internalize_relationship(
+			in CosStream::StreamIO sio,
+			in CosGraphs::NamedRoles newRoles);
+		CosGraphs::PropagationValue externalize_propagation (
+		in CosRelationships::RoleName fromRoleName,
+		in CosRelationships::RoleName toRoleName,
+		out boolean sameForAll);
+	};
+
+	interface PropagationCriteriaFactory {
+	       CosGraphs::TraversalCriteria create_for_externalize( );
+	};
+
+
+};
+#endif  /* ifndef _COS_STREAM_IDL_  */
+//File: CosContainment.idl
+//Part of the Externalization Service
+
+#ifndef _COS_CONTAINMENT_IDL_
+#define _COS_CONTAINMENT_IDL_
+
+#include <CosGraphs.idl>
+
+#pragma prefix "omg.org"
+
+module CosContainment {
+
+ 	interface Relationship : CosRelationships::Relationship {};
+
+ 	interface ContainsRole : CosGraphs::Role {};
+
+ 	interface ContainedInRole : CosGraphs::Role {};
+
+};
+#endif /* ifndef _COS_CONTAINMENT_IDL_ */
+//File: CosGraphs.idl
+//Part of the Relationship Service
+
+#ifndef _COS_GRAPHS_IDL_
+#define _COS_GRAPHS_IDL_
+
+#include <orb.idl>
+#include <CosRelationships.idl>
+#include <CosObjectIdentity.idl>
+
+#pragma prefix "omg.org"
+
+module CosGraphs {
+
+		interface TraversalFactory; 
+		interface Traversal;
+		interface TraversalCriteria;
+		interface Node;
+		interface NodeFactory;
+		interface Role; 
+		interface EdgeIterator; 
+				
+		struct NodeHandle {
+			Node the_node;
+			CosObjectIdentity::ObjectIdentifier constant_random_id;
+		};
+		typedef sequence<NodeHandle> NodeHandles;
+				
+		struct NamedRole {
+			Role the_role;	
+			CosRelationships::RoleName the_name;
+		};
+		typedef sequence<NamedRole> NamedRoles;
+
+		struct EndPoint {
+			NodeHandle the_node;
+			NamedRole the_role;
+		};
+		typedef sequence<EndPoint> EndPoints;
+
+		struct Edge {
+			EndPoint from;
+			CosRelationships::RelationshipHandle the_relationship;
+			EndPoints relatives;
+		};
+		typedef sequence<Edge> Edges;
+
+		enum PropagationValue {deep, shallow, none, inhibit};
+		enum Mode {depthFirst, breadthFirst, bestFirst};
+
+		interface TraversalFactory {
+			Traversal create_traversal_on (
+					in NodeHandle root_node,
+					in TraversalCriteria the_criteria,
+					in Mode how);
+		};
+
+		interface Traversal {
+			typedef unsigned long TraversalScopedId;
+			struct ScopedEndPoint {
+				EndPoint point;
+				TraversalScopedId id;
+			};
+			typedef sequence<ScopedEndPoint> ScopedEndPoints;
+			struct ScopedRelationship {
+				CosRelationships::RelationshipHandle 
+					scoped_relationship;
+				TraversalScopedId id;
+			};
+			struct ScopedEdge {
+				ScopedEndPoint from;
+				ScopedRelationship the_relationship;
+				ScopedEndPoints relatives;
+			};
+			typedef sequence<ScopedEdge> ScopedEdges;
+			boolean next_one (out ScopedEdge the_edge);
+			boolean next_n (in short how_many,
+							out ScopedEdges the_edges);
+			void destroy ();
+		};
+				
+		interface TraversalCriteria {
+			struct WeightedEdge {
+				Edge the_edge;
+				unsigned long weight;
+				sequence<NodeHandle> next_nodes;
+			};
+			typedef sequence<WeightedEdge> WeightedEdges;
+			void visit_node(in NodeHandle a_node,
+							in Mode search_mode);
+			boolean next_one (out WeightedEdge the_edge);
+			boolean next_n (in short how_many, 
+							out WeightedEdges the_edges);
+			void destroy();
+		};
+				
+		interface Node: CosObjectIdentity::IdentifiableObject {
+			typedef sequence<Role> Roles;
+			exception NoSuchRole {};
+			exception DuplicateRoleType {};
+				
+			readonly attribute CosRelationships::RelatedObject
+				 related_object;
+			readonly attribute Roles roles_of_node;
+			Roles roles_of_type ( 
+					in CORBA::InterfaceDef role_type);
+			void add_role (in Role a_role)
+					raises (DuplicateRoleType);
+			void remove_role (in CORBA::InterfaceDef of_type)
+				raises (NoSuchRole);
+		};
+				
+		interface NodeFactory {
+			Node create_node (in Object related_object);
+		};
+				
+		interface Role : CosRelationships::Role {
+			void get_edges ( in long how_many,
+					out Edges the_edges,
+					out EdgeIterator the_rest);
+		};
+				
+		interface EdgeIterator {
+			boolean next_one (out Edge the_edge);
+			boolean next_n ( in unsigned long how_many,
+					out Edges the_edges);
+			void destroy ();
+		};
+				
+};
+
+#endif /* ifndef _COS_GRAPHS_IDL_ */
+//File: CosObjectIdentity.idl
+//Part of the Relationship Service
+
+#ifndef _COS_OBJECT_IDENTITY_IDL_
+#define _COS_OBJECT_IDENTITY_IDL_
+#pragma prefix "omg.org"
+
+module CosObjectIdentity {
+
+	typedef unsigned long ObjectIdentifier;
+
+	interface IdentifiableObject {
+		readonly attribute ObjectIdentifier constant_random_id;
+		boolean is_identical (
+			in IdentifiableObject other_object);
+	};
+
+};
+        
+#endif /* ifndef _COS_OBJECT_IDENTITY_IDL_ */
+//File: CosReference.idl
+//Part of the Relationship Service
+
+#ifndef _COS_REFERENCE_IDL_
+#define _COS_REFERENCE_IDL_
+
+#include <CosGraphs.idl>
+
+#pragma prefix "omg.org"
+
+module CosReference {
+
+	interface Relationship : 
+			CosRelationships::Relationship {};
+
+	interface ReferencesRole : CosGraphs::Role {};
+
+	interface ReferencedByRole : CosGraphs::Role {};
+
+};
+#endif /* ifndef _COS_REFERENCE_IDL_ */
+//File: CosRelationships.idl
+//Part of the Relationship Service
+
+#ifndef _COS_RELATIONSHIPS_IDL_
+#define _COS_RELATIONSHIPS_IDL_
+
+#include <orb.idl>
+#include <CosObjectIdentity.idl>
+
+#pragma prefix "omg.org"
+
+module CosRelationships {
+
+	interface RoleFactory; 
+	interface RelationshipFactory; 
+	interface Relationship; 
+	interface Role;
+	interface RelationshipIterator;
+
+	typedef Object RelatedObject;
+	typedef sequence<Role> Roles;
+	typedef string RoleName;
+	typedef sequence<RoleName> RoleNames;
+
+	struct NamedRole {RoleName name; Role aRole;};
+	typedef sequence<NamedRole> NamedRoles;
+
+	struct RelationshipHandle {
+			Relationship the_relationship;
+			CosObjectIdentity::ObjectIdentifier constant_random_id;
+	};
+	typedef sequence<RelationshipHandle> RelationshipHandles;
+
+	interface RelationshipFactory {
+		struct NamedRoleType {
+			RoleName name;
+			CORBA::InterfaceDef named_role_type;
+		};
+		typedef sequence<NamedRoleType> NamedRoleTypes;
+		readonly attribute CORBA::InterfaceDef relationship_type;
+		readonly attribute unsigned short degree;
+		readonly attribute NamedRoleTypes named_role_types;
+		exception RoleTypeError {NamedRoles culprits;};
+		exception MaxCardinalityExceeded {
+			NamedRoles culprits;};
+		exception DegreeError {unsigned short required_degree;};
+		exception DuplicateRoleName {NamedRoles culprits;};
+		exception UnknownRoleName {NamedRoles culprits;};
+
+		Relationship create (in NamedRoles named_roles)
+			raises (RoleTypeError,
+					MaxCardinalityExceeded,
+					DegreeError,
+					UnknownRoleName);
+	};
+
+	interface Relationship : CosObjectIdentity::IdentifiableObject {
+		exception CannotUnlink {
+			Roles offending_roles;
+		};
+		readonly attribute NamedRoles named_roles;
+		void destroy () raises(CannotUnlink);
+	};
+
+	interface Role {
+		exception UnknownRoleName {};
+		exception UnknownRelationship {};
+		exception RelationshipTypeError {};
+		exception CannotDestroyRelationship {
+			RelationshipHandles offenders;
+		};
+		exception ParticipatingInRelationship {
+			RelationshipHandles the_relationships;
+		};
+		readonly attribute RelatedObject related_object;
+		RelatedObject get_other_related_object (
+			in RelationshipHandle rel,
+			in RoleName target_name)
+			raises (UnknownRoleName,
+					UnknownRelationship);
+		Role get_other_role (in RelationshipHandle rel, 
+			in RoleName target_name)
+			raises (UnknownRoleName, UnknownRelationship);
+		void get_relationships (
+			in unsigned long how_many,
+			out RelationshipHandles rels,
+			out RelationshipIterator iterator);
+		void destroy_relationships()
+			raises(CannotDestroyRelationship);
+		void destroy() raises(ParticipatingInRelationship);
+		boolean check_minimum_cardinality ();
+		void link (in RelationshipHandle rel,
+			in NamedRoles named_roles)
+			raises( RelationshipFactory::MaxCardinalityExceeded,
+					RelationshipTypeError);
+		void unlink (in RelationshipHandle rel)
+			raises (UnknownRelationship);
+	};
+
+	interface RoleFactory {
+		exception NilRelatedObject {};
+		exception RelatedObjectTypeError {};
+		readonly attribute CORBA::InterfaceDef role_type;
+		readonly attribute unsigned long max_cardinality;
+		readonly attribute unsigned long min_cardinality;
+		typedef sequence<CORBA::InterfaceDef> InterfaceDefs;
+		readonly attribute InterfaceDefs related_object_types;
+
+		Role create_role (in RelatedObject related_object)
+			raises (NilRelatedObject, RelatedObjectTypeError);
+	};
+
+	interface RelationshipIterator {
+		boolean next_one (out RelationshipHandle rel);
+		boolean next_n (in unsigned long how_many,
+						out RelationshipHandles rels);
+		void destroy ();
+	};
+
+};
+
+#endif /* ifndef _COS_RELATIONSHIPS_IDL_ */
+//File: CosTransactions.idl
+//Part of the Transaction Service
+
+#ifndef _COS_TRANSACTIONS_IDL_
+#define _COS_TRANSACTIONS_IDL_
+
+#include <orb.idl>
+
+#pragma prefix "omg.org"
+
+module CosTransactions {
+
+	// Forward references for interfaces defined later in module
+	interface Current;
+	interface TransactionFactory;
+	interface Control;
+	interface Terminator;
+	interface Coordinator;
+	interface RecoveryCoordinator;
+	interface Resource;
+	interface Synchronization;
+	interface SubtransactionAwareResource;
+	interface TransactionalObject; 
+
+	// DATATYPES 
+	enum Status {
+		StatusActive,
+		StatusMarkedRollback,
+		StatusPrepared,
+		StatusCommitted,
+		StatusRolledBack,
+		StatusUnknown,
+		StatusNoTransaction,
+		StatusPreparing,
+		StatusCommitting,
+		StatusRollingBack
+	};
+
+	enum Vote {
+		VoteCommit,
+		VoteRollback,
+		VoteReadOnly
+	};
+
+	// Structure definitions
+	struct otid_t {
+		long formatID; /*format identifier. 0 is OSI TP */
+		long bqual_length;
+		sequence <octet> tid;
+	};
+	struct TransIdentity {
+		Coordinator coord;
+		Terminator term;
+		otid_t otid;
+	};
+	struct PropagationContext {
+		unsigned long timeout;
+		TransIdentity current;
+		sequence <TransIdentity> parents;
+		any implementation_specific_data;
+	};
+
+	// Heuristic exceptions
+	exception HeuristicRollback {};
+	exception HeuristicCommit {};
+	exception HeuristicMixed {};
+	exception HeuristicHazard {};
+
+	// Other transaction-specific exceptions
+	exception SubtransactionsUnavailable {};
+	exception NotSubtransaction {};
+	exception Inactive {};
+	exception NotPrepared {};
+	exception NoTransaction {};
+	exception InvalidControl {};
+	exception Unavailable {};
+	exception SynchronizationUnavailable {};
+	
+	// Current transaction 
+	interface Current : CORBA::Current {
+		void begin()
+			raises(SubtransactionsUnavailable);
+		void commit(in boolean report_heuristics)
+			raises(
+				NoTransaction,
+				HeuristicMixed,
+				HeuristicHazard
+			);
+		void rollback()
+			raises(NoTransaction);
+		void rollback_only()
+			raises(NoTransaction);
+
+		Status get_status();
+		string get_transaction_name();
+		void set_timeout(in unsigned long seconds);
+		Control get_control();
+		Control suspend();
+		void resume(in Control which)
+			raises(InvalidControl);
+	};
+
+
+	interface TransactionFactory {
+		Control create(in unsigned long time_out);
+		Control recreate(in PropagationContext ctx);
+	};
+
+	interface Control {
+		Terminator get_terminator()
+			raises(Unavailable);
+		Coordinator get_coordinator()
+			raises(Unavailable);
+	};
+
+	interface Terminator {
+		void commit(in boolean report_heuristics)
+			raises(
+				HeuristicMixed,
+				HeuristicHazard
+			);
+		void rollback();
+	};
+
+	interface Coordinator {
+
+		Status get_status();
+		Status get_parent_status();
+		Status get_top_level_status();
+
+		boolean is_same_transaction(in Coordinator tc);
+		boolean is_related_transaction(in Coordinator tc);
+		boolean is_ancestor_transaction(in Coordinator tc);
+		boolean is_descendant_transaction(in Coordinator tc);
+		boolean is_top_level_transaction();
+
+		unsigned long hash_transaction();
+		unsigned long hash_top_level_tran();
+
+		RecoveryCoordinator register_resource(in Resource r)
+			raises(Inactive);
+
+		void register_synchronization (in Synchronization sync)
+			raises(Inactive, SynchronizationUnavailable);
+
+		void register_subtran_aware(in SubtransactionAwareResource r)
+			raises(Inactive, NotSubtransaction);
+
+		void rollback_only()
+			raises(Inactive);
+
+		string get_transaction_name();
+		Control create_subtransaction()
+			raises(SubtransactionsUnavailable, Inactive);
+
+		PropagationContext get_txcontext ()
+			raises(Unavailable);
+	};
+
+	interface RecoveryCoordinator {
+		Status replay_completion(in Resource r)
+			raises(NotPrepared);
+	};
+
+	interface Resource {
+		Vote prepare()
+			raises(
+				HeuristicMixed,
+				HeuristicHazard
+			);
+		void rollback()
+			raises(
+				HeuristicCommit,
+				HeuristicMixed,
+				HeuristicHazard
+			);
+		void commit()
+			raises(
+				NotPrepared,
+				HeuristicRollback,
+				HeuristicMixed,
+				HeuristicHazard
+			);
+		void commit_one_phase()
+			raises(
+				HeuristicHazard
+			);
+		void forget();
+	};
+
+	interface TransactionalObject {
+	};
+
+	interface Synchronization : TransactionalObject {
+		void before_completion();
+		void after_completion(in CosTransactions::Status status);
+	};
+
+	interface SubtransactionAwareResource : Resource {
+		void commit_subtransaction(in Coordinator parent);
+		void rollback_subtransaction();
+	};
+
+}; // End of CosTransactions Module
+
+#endif /* ifndef _COS_TRANSACTIONS_IDL_ */
+//File: CosTSPortability.idl
+//Part of the Transaction Service
+
+#ifndef _COS_TS_PORTABILITY_IDL_
+#define _COS_TS_PORTABILITY_IDL_
+
+//Note Even though this module is marked PIDL, it compiles with
+//     an IDL compiler. 
+
+#include <CosTransactions.idl>
+
+#pragma prefix "omg.org"
+
+module CosTSPortability { // PIDL
+	typedef long ReqId;
+
+	interface Sender {
+		void sending_request(in ReqId id,
+			out CosTransactions::PropagationContext ctx);
+		void received_reply(in ReqId id,
+			in CosTransactions::PropagationContext ctx, 
+			in CORBA::Environment env);
+	};
+
+	interface Receiver {
+		void received_request(in ReqId id,
+			in CosTransactions::PropagationContext ctx);
+		void sending_reply(in ReqId id,
+			out CosTransactions::PropagationContext ctx);
+	};
+};
+#endif /* ifndef _COS_TS_PORTABILITY_IDL_ */
+//File: CosQuery.idl
+//Part of the Query Service
+
+#ifndef _COS_QUERY_IDL_
+#define _COS_QUERY_IDL_
+
+#include <orb.idl>
+#include <CosQueryCollection.idl>
+
+#pragma prefix "omg.org"
+
+module CosQuery {
+
+	exception QueryInvalid {string why;};
+	exception QueryProcessingError {string why;};
+	exception QueryTypeInvalid {};
+
+	enum QueryStatus {complete, incomplete};
+
+	typedef CosQueryCollection::ParameterList ParameterList;
+	typedef CORBA::InterfaceDef QLType;
+
+	interface Query;
+	interface QueryLanguageType {};
+	interface SQLQuery : QueryLanguageType {};
+	interface SQL_92Query : SQLQuery {};
+	interface OQL : QueryLanguageType {};
+	interface OQLBasic : OQL {};
+	interface OQL_93 : OQL {};
+	interface OQL_93Basic : OQL_93, OQLBasic {};
+
+	interface QueryEvaluator {
+		typedef sequence<QLType> QLTypes;
+		readonly attribute QLTypes ql_types;
+
+		readonly attribute QLType default_ql_type;
+
+		any evaluate (in string query, in QLType ql_type, in ParameterList params) raises(QueryTypeInvalid, QueryInvalid, QueryProcessingError);
+	};
+	
+	interface QueryableCollection : QueryEvaluator, CosQueryCollection::Collection {};
+
+	interface QueryManager : QueryEvaluator {
+		Query create (in string query, in QLType ql_type, in ParameterList params) raises(QueryTypeInvalid, QueryInvalid);
+	};
+
+	interface Query {
+		readonly attribute QueryManager query_mgr;
+
+		void prepare (in ParameterList params) raises(QueryProcessingError);
+		void execute (in ParameterList params) raises(QueryProcessingError);
+
+		QueryStatus get_status ();
+		any get_result ();
+	};
+
+};
+#endif /* ifndef _COS_QUERY_IDL_ */
+//File: CosQueryCollection.idl
+//Part of the Query Service
+// Note: if your IDL compiler does not yet support the 
+//   CORBA 2.3 Feature "Escaped Identifiers" (which provides 
+//   for the addition of new keywords to IDL, compile this 
+//   module with the preprocessor definition 
+//   "NO_ESCAPED_IDENTIFIERS". With many compilers this 
+//   would be done a qualifier on the command line, 
+//   something like -DNO_ESCAPED_IDENTIFIERS
+
+#ifndef _COS_QUERY_COLLECTION_IDL_
+#define _COS_QUERY_COLLECTION_IDL_
+#pragma prefix "omg.org"
+
+module CosQueryCollection {
+
+	exception ElementInvalid {};
+	exception IteratorInvalid {};
+	exception PositionInvalid {};
+
+#ifdef NO_ESCAPED_IDENTIFIERS
+	enum ValueType {TypeBoolean, TypeChar, TypeOctet, TypeShort, TypeUShort, TypeLong, TypeULong, TypeFloat, TypeDouble, TypeString, TypeObject, TypeAny, TypeSmallInt, TypeInteger, TypeReal, TypeDoublePrecision, TypeCharacter, TypeDecimal, TypeNumeric};
+#else
+	enum _ValueType {TypeBoolean, TypeChar, TypeOctet, TypeShort, TypeUShort, TypeLong, TypeULong, TypeFloat, TypeDouble, TypeString, TypeObject, TypeAny, TypeSmallInt, TypeInteger, TypeReal, TypeDoublePrecision, TypeCharacter, TypeDecimal, TypeNumeric};
+#endif
+	struct Decimal {
+		long precision; 
+		long scale; 
+		sequence<octet> value;
+	};
+
+#ifdef NO_ESCAPED_IDENTIFIERS
+	union Value switch(ValueType) {
+#else
+	union _Value switch(ValueType) {
+#endif
+		case TypeBoolean : boolean b;
+		case TypeChar	 : char c;
+		case TypeOctet   : octet o;
+		case TypeShort   : short s;
+		case TypeUShort  : unsigned short us;
+		case TypeLong    : long l;
+		case TypeULong   : unsigned long ul;
+		case TypeFloat   : float f;
+		case TypeDouble  : double d;
+		case TypeString  : string str;
+		case TypeObject  : Object obj;
+		case TypeAny     : any a;
+		case TypeSmallInt : short si;
+		case TypeInteger : long i;
+		case TypeReal    : float r;
+		case TypeDoublePrecision : double dp;
+		case TypeCharacter : string ch;
+		case TypeDecimal  : Decimal dec;
+		case TypeNumeric  : Decimal n;
+	};
+	typedef boolean Null;
+	union FieldValue switch(Null) {
+		case FALSE : Value v;
+	};
+	typedef sequence<FieldValue> Record;
+	
+	typedef string Istring;
+	struct NVPair {Istring name; any value;};
+	typedef sequence<NVPair> ParameterList;
+
+	interface Collection;
+	interface Iterator;
+
+	interface CollectionFactory {
+		Collection create (in ParameterList params);
+	};
+
+	interface Collection {
+		readonly attribute long cardinality;
+	
+		void add_element (in any element) raises(ElementInvalid);
+		void add_all_elements (in Collection elements) raises(ElementInvalid);
+
+		void insert_element_at (in any element, in Iterator where) raises(IteratorInvalid, ElementInvalid);
+
+		void replace_element_at (in any element, in Iterator where) raises(IteratorInvalid, PositionInvalid, ElementInvalid);
+
+		void remove_element_at (in Iterator where) raises(IteratorInvalid, PositionInvalid);
+		void remove_all_elements ();
+
+		any retrieve_element_at (in Iterator where) raises(IteratorInvalid, PositionInvalid);
+
+		Iterator create_iterator ();
+	};
+
+
+	interface Iterator {
+		any next () raises(IteratorInvalid, PositionInvalid);
+
+		void reset ();
+		boolean more ();
+	};
+};
+#endif /* ifndef _COS_QUERY_COLLECTION_IDL_ */
+//File: CosLicensingManager.idl
+//The only module of the Licensing Service
+
+#ifndef _COS_LICENSING_MANAGER_IDL_
+#define _COS_LICENSING_MANAGER_IDL_
+
+#include <CosEventComm.idl>
+#include <CosPropertyService.idl>
+#include <CosEventComm.idl>
+
+#pragma prefix "omg.org"
+
+module CosLicensingManager {
+	exception InvalidProducer{}; 
+	exception InvalidParameter{};
+	exception ComponentNotRegistered{};
+
+	typedef Object ProducerSpecificNotification;
+
+	enum ActionRequired { continue, terminate}; 
+
+	enum Answer { yes, no };
+
+	struct Action {
+		ActionRequired action ;		
+		Answer notification_required ;
+		Answer wait_for_user_confirmation_after_notification ;
+		unsigned long notification_duration;	
+		ProducerSpecificNotification producer_notification; 
+		string notification_text; 
+	};
+
+	struct ChallengeData {
+		unsigned long challenge_index; 
+		unsigned long random_number; 
+		string digest; 
+	};
+
+
+	enum ChallengeProtocol { default_protocol, producer_defined };	
+	struct Challenge {
+		ChallengeProtocol challenge_protocol;
+		unsigned long challenge_data_size;
+		any challenge_data; 
+	};
+
+	typedef any LicenseHandle;
+	
+	interface ProducerSpecificLicenseService {
+
+	readonly attribute   string producer_contact_info;
+	readonly attribute   string producer_specific_license_service_info;
+
+	LicenseHandle start_use ( 
+		in CORBA::Principal aPrincipal,
+		in string component_name, 
+		in string component_version,
+		in CosPropertyService::PropertySet license_use_context,
+		in CosEventComm::PushConsumer call_back, 
+		inout CosLicensingManager::Challenge Challenge)
+
+		raises ( InvalidParameter, ComponentNotRegistered);
+
+  		void check_use (
+			in LicenseHandle handle, 
+			in CosPropertyService::PropertySet license_use_context,
+			out unsigned long recommended_check_interval,
+			out Action action_to_be_taken, 
+			inout CosLicensingManager::Challenge Challenge)
+
+			raises ( InvalidParameter );
+
+		void end_use (
+			in LicenseHandle handle, 
+			in CosPropertyService::PropertySet license_use_context,
+			inout CosLicensingManager::Challenge Challenge)
+
+			raises ( InvalidParameter );
+	};
+
+	interface LicenseServiceManager {
+		ProducerSpecificLicenseService
+		obtain_producer_specific_license_service (
+			in string producer_name, 
+			inout CosLicensingManager::Challenge Challenge)
+
+			raises ( InvalidProducer, InvalidParameter ) ; 
+	};
+};
+
+#endif /* ifndef _COS_LICENSING_MANAGER_IDL_ */
+//File: CosPropertyService.idl
+//The only module of the Property Service
+
+#ifndef _COS_PROPERTY_SERVICE_IDL_
+#define _COS_PROPERTY_SERVICE_IDL_
+#pragma prefix "omg.org"
+
+#include <orb.idl>
+
+module CosPropertyService
+{
+	/*****************************************************/
+	/*  Data Types                                       */
+	/*****************************************************/
+
+	typedef string PropertyName;
+	struct Property {
+		PropertyName property_name;
+		any property_value;
+	};
+
+	enum PropertyModeType {
+		normal,
+		read_only,
+		fixed_normal,
+		fixed_readonly,
+		undefined
+	};
+
+	struct PropertyDef {
+		PropertyName property_name;
+		any property_value;
+		PropertyModeType property_mode;
+	};	
+
+	struct PropertyMode {
+		PropertyName property_name;
+		PropertyModeType property_mode;
+	};	
+
+	typedef sequence<PropertyName> PropertyNames;
+	typedef sequence<Property> Properties;
+	typedef sequence<PropertyDef> PropertyDefs;
+	typedef sequence<PropertyMode> PropertyModes;
+	typedef sequence<CORBA::TypeCode> PropertyTypes;
+
+	interface PropertyNamesIterator;
+	interface PropertiesIterator;
+	interface PropertySetFactory;
+	interface PropertySetDef;
+	interface PropertySet;
+
+	/*****************************************************/
+	/*  Exceptions                                       */
+	/*****************************************************/
+	exception ConstraintNotSupported{};
+	exception InvalidPropertyName {};
+	exception ConflictingProperty {};
+	exception PropertyNotFound {};
+	exception UnsupportedTypeCode {};
+	exception UnsupportedProperty {};
+	exception UnsupportedMode {};
+	exception FixedProperty {};
+	exception ReadOnlyProperty {};
+
+	enum ExceptionReason {
+		invalid_property_name,
+		conflicting_property,
+		property_not_found,
+		unsupported_type_code,
+		unsupported_property,
+		unsupported_mode,
+		fixed_property,
+		read_only_property
+	};
+
+	struct PropertyException {
+		ExceptionReason reason;
+		PropertyName failing_property_name;
+	};
+ 
+	typedef sequence<PropertyException> PropertyExceptions;
+
+	exception MultipleExceptions {
+		PropertyExceptions exceptions;
+	};
+
+	/*****************************************************/
+	/*  Interface Definitions                            */
+	/*****************************************************/
+	interface PropertySetFactory
+	{
+		PropertySet create_propertyset();
+		PropertySet create_constrained_propertyset(
+			in PropertyTypes allowed_property_types,
+			in Properties  allowed_properties)
+			raises(ConstraintNotSupported);
+		PropertySet create_initial_propertyset(
+			in Properties  initial_properties)
+			raises(MultipleExceptions);
+	};
+
+	/*---------------------------------------------------*/
+	interface PropertySetDefFactory
+	{
+		PropertySetDef create_propertysetdef();
+		PropertySetDef create_constrained_propertysetdef(
+			in PropertyTypes allowed_property_types,
+			in PropertyDefs  allowed_property_defs)
+			raises(ConstraintNotSupported);
+		PropertySetDef create_initial_propertysetdef(
+			in PropertyDefs  initial_property_defs)
+			raises(MultipleExceptions);
+	};
+
+	/*---------------------------------------------------*/
+	interface PropertySet
+	{
+		/* Support for defining and modifying properties */
+		void define_property(
+			in PropertyName property_name,
+			in any property_value)
+			raises(	InvalidPropertyName,
+					ConflictingProperty,
+					UnsupportedTypeCode,
+					UnsupportedProperty,
+					ReadOnlyProperty);
+
+		void define_properties(
+			in Properties nproperties)
+			raises(MultipleExceptions);
+
+		/* Support for Getting Properties and their Names */
+		unsigned long get_number_of_properties();
+
+		void get_all_property_names(
+			in unsigned long how_many,
+			out PropertyNames property_names,
+			out PropertyNamesIterator rest);
+
+		any  get_property_value(
+			in  PropertyName property_name)
+			raises(	PropertyNotFound,
+					InvalidPropertyName);
+
+		boolean get_properties(
+			in PropertyNames property_names,
+			out Properties nproperties);
+
+		void get_all_properties(
+			in unsigned long how_many,
+			out Properties nproperties,
+			out PropertiesIterator rest);
+
+		/* Support for Deleting Properties              */
+		void delete_property(
+			in PropertyName property_name)
+			raises(	PropertyNotFound,
+					InvalidPropertyName,
+					FixedProperty);
+
+		void delete_properties(
+			in PropertyNames property_names)
+			raises(MultipleExceptions);
+
+		boolean delete_all_properties();
+
+		/* Support for Existence Check                  */
+		boolean is_property_defined(
+			in PropertyName property_name)
+			raises(InvalidPropertyName);
+	};
+
+	/*---------------------------------------------------*/
+	interface PropertySetDef:PropertySet
+	{
+		/* Support for retrieval of PropertySet constraints*/
+		void get_allowed_property_types(
+			out PropertyTypes property_types);
+            
+		void get_allowed_properties(
+			out PropertyDefs property_defs);
+            
+		/* Support for defining and modifying properties */
+		void define_property_with_mode(
+			in PropertyName property_name,
+			in any property_value,
+			in PropertyModeType property_mode)
+			raises(	InvalidPropertyName,
+					ConflictingProperty,
+					UnsupportedTypeCode,
+					UnsupportedProperty,
+					UnsupportedMode,
+					ReadOnlyProperty);
+
+		void define_properties_with_modes(
+			in PropertyDefs property_defs)
+			raises(MultipleExceptions);
+
+		/* Support for Getting and Setting Property Modes */
+		PropertyModeType get_property_mode(
+			in  PropertyName property_name)
+			raises(	PropertyNotFound,
+					InvalidPropertyName);
+
+		boolean get_property_modes(
+			in PropertyNames property_names,
+			out PropertyModes property_modes);
+
+		void set_property_mode(
+			in PropertyName property_name,
+			in PropertyModeType property_mode)
+			raises(	InvalidPropertyName,
+					PropertyNotFound,
+					UnsupportedMode);
+
+		void set_property_modes(
+			in PropertyModes property_modes)
+			raises(MultipleExceptions);
+		};
+
+	/*---------------------------------------------------*/
+	interface PropertyNamesIterator
+	{
+		void    reset();
+		boolean next_one(
+			out PropertyName property_name);
+		boolean next_n (
+			in  unsigned long how_many,
+			out PropertyNames property_names);
+		void    destroy();
+	};
+
+	/*---------------------------------------------------*/
+	interface PropertiesIterator
+	{
+		void    reset();
+		boolean next_one(
+			out Property aproperty);
+		boolean next_n(
+			in unsigned long how_many,
+			out Properties nproperties);
+		void    destroy();
+	};
+};
+#endif /* ifndef _COS_PROPERTY_SERVICE_IDL_ */
+//File: CosTime.idl
+//Part of the Time Service
+
+#ifndef _COS_TIME_IDL_
+#define _COS_TIME_IDL_
+
+#include <TimeBase.idl>
+
+#pragma prefix "omg.org"
+
+module CosTime {
+
+	enum TimeComparison {	
+		TCEqualTo,
+		TCLessThan,
+		TCGreaterThan,
+		TCIndeterminate
+	};
+
+	enum ComparisonType{
+		IntervalC,		
+		MidC		
+	};
+
+	enum OverlapType {
+		OTContainer,
+		OTContained,
+		OTOverlap,
+		OTNoOverlap
+	};
+
+	exception TimeUnavailable {};
+	interface TIO;		// forward declaration
+ 
+	interface UTO {
+		readonly attribute TimeBase::TimeT			time;
+		readonly attribute TimeBase::InaccuracyT	inaccuracy;
+		readonly attribute TimeBase::TdfT 			tdf;
+		readonly attribute TimeBase::UtcT 			utc_time;
+		UTO absolute_time();
+		TimeComparison compare_time(
+			in	ComparisonType	comparison_type,
+			in	CosTime::UTO    uto
+		);
+		TIO time_to_interval(
+			in	CosTime::UTO	uto);
+		TIO interval();
+	};
+	
+	interface TIO {
+		readonly attribute TimeBase::IntervalT 	time_interval;
+		OverlapType spans (
+			in	UTO			time,
+			out TIO			overlap);
+		OverlapType overlaps (
+			in 	TIO			interval,
+			out TIO			overlap);
+		UTO time ();
+	};
+
+	interface TimeService {
+		UTO universal_time()
+			raises(TimeUnavailable);
+		UTO secure_universal_time()
+			raises(TimeUnavailable);
+		UTO new_universal_time(
+			in TimeBase::TimeT			time,
+			in TimeBase::InaccuracyT	inaccuracy,
+			in TimeBase::TdfT			tdf);
+		UTO uto_from_utc(
+			in TimeBase::UtcT			utc);
+		TIO new_interval(
+			in TimeBase::TimeT			lower,
+			in TimeBase::TimeT			upper);
+	};
+};
+
+#endif /* ifndef _COS_TIME_IDL_ */
+//File: CosTimerEvent.idl
+//Part of the Time Service
+
+#ifndef _COS_TIMER_EVENT_IDL_
+#define _COS_TIMER_EVENT_IDL_
+
+#include <CosTime.idl>
+#include <CosEventComm.idl>
+
+#pragma prefix "omg.org"
+
+module CosTimerEvent{
+	enum TimeType {
+		TTAbsolute,
+		TTRelative,
+		TTPeriodic
+	};
+
+	enum EventStatus {
+		ESTimeSet,				
+		ESTimeCleared,
+		ESTriggered,				
+		ESFailedTrigger
+	};
+
+	struct TimerEventT {
+		TimeBase::UtcT			utc;
+		any						event_data;
+	};
+
+ 	interface TimerEventHandler {
+		readonly attribute EventStatus status;
+		boolean time_set(
+			out CosTime::UTO	uto);	
+		void SetTimer(
+			in TimeType			time_type,
+			in CosTime::UTO 	trigger_time);
+	    boolean cancel_timer();
+	    void set_data(
+			in any				event_data);
+	};
+
+	interface TimerEventService {
+		TimerEventHandler register(
+			in CosEventComm::PushConsumer 	event_interface,
+			in any 							data);
+		void unregister(
+			in TimerEventHandler 	timer_event_handler);
+		CosTime::UTO event_time(
+			in TimerEventT		timer_event);
+	};	
+};
+#endif /* ifndef _COS_TIMER_EVENT_IDL_ */
+//File: TimeBase.idl
+//Part of the Time Service
+// Note: if your IDL compiler does not yet support the 
+//   "long long" data type, compile this module with the 
+//   preprocessor definition "NOLONGLONG". With many 
+//   compilers this would be done with a qualifier on 
+//   the command line, something like -DNOLONGLONG
+
+#ifndef _TIME_BASE_IDL_
+#define _TIME_BASE_IDL_
+#pragma prefix "omg.org"
+
+module TimeBase {
+
+#ifdef NOLONGLONG
+	struct ulonglong{
+		unsigned long 		low;
+		unsigned long		high;
+	};
+	typedef ulonglong 		TimeT;
+#else
+	typedef unsigned long long	TimeT;
+#endif
+	
+	typedef TimeT 			InaccuracyT;
+	typedef short 			TdfT;
+	struct UtcT {
+		TimeT			time;		// 8 octets
+		unsigned long	inacclo;	// 4 octets
+		unsigned short	inacchi;	// 2 octets
+		TdfT			tdf;		// 2 octets 
+									// total 16 octets.
+	};
+
+	struct IntervalT {
+		TimeT			lower_bound;
+		TimeT			upper_bound;
+	};
+};
+#endif /* ifndef _TIME_BASE_IDL_ */
+//File: DCE_CIOPSecurity.idl
+//Part of the Security Service
+
+#ifndef _DCE_CIOP_SECURITY_IDL
+#define _DCE_CIOP_SECURITY_IDL
+
+#include <IOP.idl>
+
+#pragma prefix "omg.org"
+
+module DCE_CIOPSecurity {
+	const IOP::ComponentId	TAG_DCE_SEC_MECH = 103;
+	typedef unsigned short	DCEAuthorization; 
+	const DCEAuthorization	DCEAuthorizationNone = 0;
+	const DCEAuthorization	DCEAuthorizationName = 1;
+	const DCEAuthorization	DCEAuthorizationDCE = 2;
+
+	struct DCESecurityMechanismInfo {
+		DCEAuthorization	          authorization_service;
+		sequence <IOP::TaggedComponent>   components;
+	};
+};
+#endif /* _DCE_CIOP_SECURITY_IDL */
+//File: NRService.idl
+//Part of the Security Service
+
+#ifndef _NR_SERVICE_IDL
+#define _NR_SERVICE_IDL
+
+#include <SecurityLevel2.idl>
+
+#pragma prefix "omg.org"
+
+module NRService  {
+
+    typedef Security::MechanismType 	NRMech;
+    typedef Security::ExtensibleFamily	NRPolicyId;
+
+    enum EvidenceType {     	
+        SecProofofCreation,
+        SecProofofReceipt,
+        SecProofofApproval,
+        SecProofofRetrieval,
+        SecProofofOrigin,
+        SecProofofDelivery,
+        SecNoEvidence     // used when request-only token desired
+    };
+
+    enum NRVerificationResult {
+        SecNRInvalid,
+        SecNRValid,
+        SecNRConditionallyValid 
+    };
+
+    // the following are used for evidence validity duration
+    typedef unsigned long   DurationInMinutes;
+
+    const DurationInMinutes DurationHour   = 60;
+    const DurationInMinutes DurationDay    = 1440;
+    const DurationInMinutes DurationWeek   = 10080; 
+    const DurationInMinutes DurationMonth = 43200;// 30 days;
+    const DurationInMinutes DurationYear   = 525600;//365 days;
+
+    typedef long TimeOffsetInMinutes; 
+
+    struct NRPolicyFeatures {
+         NRPolicyId         policy_id; 
+         unsigned long      policy_version;
+         NRMech             mechanism;
+    };
+
+    typedef sequence <NRPolicyFeatures> NRPolicyFeaturesList;
+
+    // features used when generating requests
+    struct RequestFeatures {
+        NRPolicyFeatures    requested_policy;
+        EvidenceType        requested_evidence;
+        string              requested_evidence_generators;
+        string              requested_evidence_recipients;
+        boolean             include_this_token_in_evidence;
+    };
+
+    struct EvidenceDescriptor {
+        EvidenceType        evidence_type;
+        DurationInMinutes   evidence_validity_duration;
+        boolean             must_use_trusted_time;
+    };
+
+    typedef sequence <EvidenceDescriptor> EvidenceDescriptorList;
+
+    struct AuthorityDescriptor {    
+        string              authority_name;
+        string              authority_role;
+        TimeOffsetInMinutes last_revocation_check_offset;
+                 // may be >0 or <0; add this to evid. gen. time to
+                 // get latest time at which mech. will check to see
+                 // if this authority's key has been revoked.
+    };
+
+    typedef sequence <AuthorityDescriptor> AuthorityDescriptorList;
+
+    struct MechanismDescriptor {
+        NRMech                  mech_type;
+        AuthorityDescriptorList authority_list;     
+        TimeOffsetInMinutes     max_time_skew; 
+                // max permissible difference between evid. gen. time
+                // and time of time service countersignature
+                // ignored if trusted time not reqd.
+    };
+
+    typedef sequence <MechanismDescriptor> MechanismDescriptorList;
+
+
+    interface NRCredentials : SecurityLevel2::Credentials{
+
+        boolean set_NR_features(
+            in   NRPolicyFeaturesList         requested_features,
+            out  NRPolicyFeaturesList         actual_features 
+        );
+
+        NRPolicyFeaturesList get_NR_features ();            
+
+        void generate_token(
+            in   Security::Opaque             input_buffer,
+            in   EvidenceType                 generate_evidence_type,
+            in   boolean                      include_data_in_token,
+            in   boolean                      generate_request,
+            in   RequestFeatures              request_features,
+            in   boolean                      input_buffer_complete,
+            out  Security::Opaque             nr_token,
+            out  Security::Opaque             evidence_check
+        );
+
+        NRVerificationResult verify_evidence(
+            in   Security::Opaque             input_token_buffer,
+            in   Security::Opaque             evidence_check, 
+            in   boolean                      form_complete_evidence,
+            in   boolean                      token_buffer_complete,
+            out  Security::Opaque             output_token,
+            out  Security::Opaque             data_included_in_token,
+            out  boolean                      evidence_is_complete,
+            out  boolean                      trusted_time_used,
+            out  Security::TimeT              complete_evidence_before,
+            out  Security::TimeT              complete_evidence_after
+        );
+
+        void get_token_details(
+            in   Security::Opaque             token_buffer,
+            in   boolean                      token_buffer_complete,
+            out  string                       token_generator_name,
+            out  NRPolicyFeatures             policy_features,
+            out  EvidenceType                 evidence_type,
+            out  Security::UtcT               evidence_generation_time,
+            out  Security::UtcT               evidence_valid_start_time,
+            out  DurationInMinutes            evidence_validity_duration,
+            out  boolean                      data_included_in_token,
+            out  boolean                      request_included_in_token,
+            out  RequestFeatures              request_features
+        );
+
+        boolean form_complete_evidence(
+            in   Security::Opaque             input_token,
+            out  Security::Opaque             output_token,
+            out  boolean                      trusted_time_used,
+            out  Security::TimeT              complete_evidence_before,
+            out  Security::TimeT              complete_evidence_after
+        );
+    };
+
+
+    interface NRPolicy : CORBA::Policy{
+
+        void get_NR_policy_info(
+            out  Security::ExtensibleFamily   NR_policy_id,
+            out  unsigned long                policy_version,
+            out  Security::TimeT              policy_effective_time,
+            out  Security::TimeT              policy_expiry_time,
+            out  EvidenceDescriptorList       supported_evidence_types,
+            out  MechanismDescriptorList      supported_mechanisms 
+        );
+
+        boolean set_NR_policy_info(
+            in   MechanismDescriptorList      requested_mechanisms,
+            out  MechanismDescriptorList      actual_mechanisms
+        );
+    };
+};
+#endif /* _NR_SERVICE_IDL */
+//File: SECIOP.idl
+//Part of the Security Service
+// Note: if your IDL compiler does not yet support the 
+//   "long long" data type, compile this module with the 
+//   preprocessor definition "NOLONGLONG". With many 
+//   compilers this would be done with a qualifier on 
+//   the command line, something like -DNOLONGLONG
+
+#ifndef _SECIOP_IDL_
+#define _SECIOP_IDL
+
+#include <IOP.idl>
+#include <Security.idl>
+
+#pragma prefix "omg.org"
+
+module SECIOP {
+
+    const IOP::ComponentId TAG_GENERIC_SEC_MECH = 12;
+    const IOP::ComponentId TAG_ASSOCIATION_OPTIONS = 13;
+    const IOP::ComponentId TAG_SEC_NAME = 14;
+
+    struct TargetAssociationOptions{
+        Security::AssociationOptions    target_supports;
+        Security::AssociationOptions    target_requires;
+    };
+
+    struct GenericMechanismInfo {
+        sequence <octet>                security_mechanism_type;
+        sequence <octet>                mech_specific_data;
+        sequence <IOP::TaggedComponent> components;
+    };
+
+    enum MsgType {
+        MTEstablishContext, 
+        MTCompleteEstablishContext,
+        MTContinueEstablishContext,
+        MTDiscardContext,
+        MTMessageError,
+        MTMessageInContext
+    };
+
+#ifdef NOLONGLONG
+    struct ulonglong {
+	unsigned long low;
+	unsigned long high;
+    };
+    typedef ulonglong ContextId;
+#else
+    typedef unsigned long long ContextId;
+#endif
+    enum ContextIdDefn {
+        CIDClient, 
+        CIDPeer,
+        CIDSender
+    };
+
+    struct EstablishContext {
+        ContextId            client_context_id;
+        sequence <octet>     initial_context_token;
+    };
+
+    struct CompleteEstablishContext {
+        ContextId        client_context_id;
+        boolean          target_context_id_valid;
+        ContextId        target_context_id;
+        sequence <octet> final_context_token;
+    };
+
+    struct ContinueEstablishContext {
+        ContextId        client_context_id;
+        sequence <octet> continuation_context_token;
+    };
+
+    struct DiscardContext {    
+        ContextIdDefn    message_context_id_defn;
+        ContextId        message_context_id;
+        sequence <octet> discard_context_token;
+    };
+
+    struct MessageError {
+        ContextIdDefn    message_context_id_defn;
+        ContextId        message_context_id;
+        long             major_status;
+        long             minor_status;
+    };
+
+    enum ContextTokenType {
+        SecTokenTypeWrap,
+        SecTokenTypeMIC
+    };
+
+    struct MessageInContext {
+        ContextIdDefn    message_context_id_defn;
+        ContextId        message_context_id;
+        ContextTokenType message_context_type;
+        sequence <octet> message_protection_token;
+    };
+
+    // messsage_protection_token is obtained by CDR encoding
+    // the SequencingHeader followed by the octets of the
+    // frame data. Sequencingheader + Frame Data is called a
+    // SequencedDataFrame
+
+    struct SequencingHeader {
+        octet            control_state;
+        unsigned long    direct_sequence_number;
+        unsigned long    reverse_sequence_number;
+        unsigned long    reverse_window;
+    };
+
+    typedef sequence <octet> SecurityName;
+    typedef unsigned short   CryptographicProfile;
+    typedef sequence <CryptographicProfile> CryptographicProfileList;
+
+    // Cryptographic profiles for SPKM
+    const CryptographicProfile    MD5_RSA = 20;
+    const CryptographicProfile    MD5_DES_CBC = 21;
+    const CryptographicProfile    DES_CBC = 22;
+    const CryptographicProfile    MD5_DES_CBC_SOURCE  = 23;
+    const CryptographicProfile    DES_CBC_SOURCE  = 24;
+
+    // Security Mechanism SPKM_1
+    const IOP::ComponentId        TAG_SPKM_1_SEC_MECH = 15;
+
+    struct SPKM_1 {
+        Security::AssociationOptions    target_supports;
+        Security::AssociationOptions    target_requires;
+        CryptographicProfileList        crypto_profile;
+        SecurityName                    security_name;
+    };
+
+    // Security Mechanism SPKM_2
+    const IOP::ComponentId        TAG_SPKM_2_SEC_MECH = 16;
+
+    struct SPKM_2 {
+        Security::AssociationOptions    target_supports;
+        Security::AssociationOptions    target_requires;
+        CryptographicProfileList        crypto_profile;
+        SecurityName                    security_name;
+    };
+
+    // Cryptographic profiles for GSS Kerberos Protocol
+    const CryptographicProfile    DES_CBC_DES_MAC = 10;
+    const CryptographicProfile    DES_CBC_MD5 = 11;
+    const CryptographicProfile    DES_MAC = 12;
+    const CryptographicProfile    MD5 = 13;
+
+    // Security Mechanism KerberosV5
+    const IOP::ComponentId        TAG_KerberosV5_SEC_MECH = 17;
+
+    struct KerberosV5 {
+        Security::AssociationOptions    target_supports;
+        Security::AssociationOptions    target_requires;
+        CryptographicProfileList        crypto_profile;
+        SecurityName                    security_name;
+    };
+
+    // Cryptographic profiles for CSI-ECMA Protocol
+    const CryptographicProfile    FullSecurity = 1;
+    const CryptographicProfile    NoDataConfidentiality = 2;
+    const CryptographicProfile    LowGradeConfidentiality = 3;
+    const CryptographicProfile    AgreedDefault = 5;
+
+    // Security Mechanism CSI_ECMA_Secret
+    const IOP::ComponentId        TAG_CSI_ECMA_Secret_SEC_MECH = 18;
+
+    struct CSI_ECMA_Secret {
+        Security::AssociationOptions    target_supports;
+        Security::AssociationOptions    target_requires;
+        CryptographicProfileList        crypto_profile;
+        SecurityName                    security_name;
+    };
+
+    // Security Mechanism CSI_ECMA_Hybrid
+    const IOP::ComponentId        TAG_CSI_ECMA_Hybrid_SEC_MECH = 19;
+
+    struct CSI_ECMA_Hybrid {
+        Security::AssociationOptions    target_supports;
+        Security::AssociationOptions    target_requires;
+        CryptographicProfileList        crypto_profile;
+        SecurityName                    security_name;
+    };
+
+    // Security Mechanism CSI_ECMA_Public
+    const IOP::ComponentId        TAG_CSI_ECMA_Public_SEC_MECH = 21;
+
+    struct CSI_ECMA_Public {
+        Security::AssociationOptions    target_supports;
+        Security::AssociationOptions    target_requires;
+        CryptographicProfileList        crypto_profile;
+        SecurityName                    security_name;
+    };
+};
+#endif /* _SECIOP_IDL */
+//File: Security.idl
+//Part of the Security Service
+// Note: if your IDL compiler does not yet support the 
+//   CORBA 2.3 Feature "Escaped Identifiers" (which provides 
+//   for the addition of new keywords to IDL, compile this 
+//   module with the preprocessor definition 
+//   "NO_ESCAPED_IDENTIFIERS". With many compilers this 
+//   would be done a qualifier on the command line, 
+//   something like -DNO_ESCAPED_IDENTIFIERS
+
+#ifndef _SECURITY_IDL
+#define _SECURITY_IDL
+
+#include <orb.idl>
+#include <TimeBase.idl>
+
+#pragma prefix "omg.org"
+
+module Security {
+
+    typedef string SecurityName;
+    typedef sequence <octet> Opaque;
+
+    // Constant declarations for Security Service Options
+    const CORBA::ServiceOption SecurityLevel1 = 1;
+    const CORBA::ServiceOption SecurityLevel2 = 2;
+    const CORBA::ServiceOption NonRepudiation = 3;
+    const CORBA::ServiceOption SecurityORBServiceRaady = 4;
+    const CORBA::ServiceOption SecurityServiceReady = 5;
+    const CORBA::ServiceOption ReplaceORBServices = 6;
+    const CORBA::ServiceOption ReplaceSecurityServices = 7;
+    const CORBA::ServiceOption StandardSecureInteroperability = 8;
+    const CORBA::ServiceOption DCESecureInteroperability = 9;
+
+    // Service options for Common Secure Interoperability
+    const CORBA::ServiceOption CommonInteroperabilityLevel0 = 10;
+    const CORBA::ServiceOption CommonInteroperabilityLevel1 = 11;
+    const CORBA::ServiceOption CommonInteroperabilityLevel2 = 12;
+
+    // Security mech types supported for secure association
+    const CORBA::ServiceDetailType SecurityMechanismType = 1;
+
+    // privilege types supported in standard access policy
+    const CORBA::ServiceDetailType SecurityAttribute = 2;
+ 
+   // extensible families for standard data types
+    struct ExtensibleFamily {
+        unsigned short        family_definer;
+        unsigned short        family;
+    };
+
+    // security association mechanism type
+    typedef string    MechanismType;
+
+    struct     SecurityMechandName {
+        MechanismType         mech_type;
+        SecurityName          security_name;
+    };
+
+    typedef sequence <MechanismType> MechanismTypeList;
+
+    typedef sequence <SecurityMechandName>  SecurityMechandNameList;
+
+
+    // security attributes
+    typedef unsigned long SecurityAttributeType;
+
+    // other attributes; family = 0
+    const SecurityAttributeType    AuditId = 1;
+    const SecurityAttributeType    AccountingId = 2;
+    const SecurityAttributeType    NonRepudiationId = 3;
+
+    // privilege attributes; family = 1
+#ifdef NO_ESCAPED_IDENTIFIERS
+    const SecurityAttributeType    Public = 1;
+#else
+    const SecurityAttributeType    _Public = 1;
+#endif
+    const SecurityAttributeType    AccessId = 2; 
+    const SecurityAttributeType    PrimaryGroupId = 3;
+    const SecurityAttributeType    GroupId = 4;
+    const SecurityAttributeType    Role = 5;
+    const SecurityAttributeType    AttributeSet = 6;
+    const SecurityAttributeType    Clearance = 7; 
+    const SecurityAttributeType    Capability = 8;
+
+    struct AttributeType {
+        ExtensibleFamily      attribute_family;
+        SecurityAttributeType attribute_type;
+    };
+
+    typedef sequence<AttributeType> AttributeTypeList;
+
+    struct SecAttribute {
+        AttributeType         attribute_type;
+        Opaque                defining_authority; 
+        Opaque                value;
+        // the value of this attribute can be 
+        // interpreted only with knowledge of type
+    };
+
+    typedef sequence <SecAttribute> AttributeList;
+
+
+    // Authentication return status
+    enum AuthenticationStatus {
+        SecAuthSuccess,
+        SecAuthFailure,
+        SecAuthContinue,
+        SecAuthExpired
+    };
+
+    // Association return status
+    enum AssociationStatus {
+        SecAssocSuccess,
+        SecAssocFailure,
+        SecAssocContinue
+    };
+
+    // Authentication method
+    typedef unsigned long    AuthenticationMethod;
+
+    // Credential types which can be set as Current default
+    enum CredentialType {
+        SecInvocationCredentials,
+        SecNRCredentials
+    };
+
+    // Declarations related to Rights 
+    struct Right {
+        ExtensibleFamily        rights_family;
+        string                  right;
+    };
+
+    typedef sequence <Right> RightsList;
+
+    enum RightsCombinator {
+        SecAllRights,
+        SecAnyRight
+    };
+
+    // Delegation related
+    enum DelegationState {
+        SecInitiator,
+        SecDelegate
+    };
+
+    // pick up from TimeBase
+    typedef TimeBase::UtcT        UtcT;
+    typedef TimeBase::IntervalT   IntervalT;
+    typedef TimeBase::TimeT       TimeT;
+
+    // Security features available on credentials.
+    enum SecurityFeature {
+        SecNoDelegation,
+        SecSimpleDelegation,
+        SecCompositeDelegation,
+        SecNoProtection,
+        SecIntegrity,
+        SecConfidentiality,
+        SecIntegrityAndConfidentiality,
+        SecDetectReplay,
+        SecDetectMisordering,
+        SecEstablishTrustInTarget
+    };
+
+    // Security feature-value
+    struct SecurityFeatureValue {
+        SecurityFeature          feature;
+        boolean                  value;
+    };
+
+    typedef sequence <SecurityFeatureValue> SecurityFeatureValueList;
+
+
+    // Quality of protection which can be specified
+    // for an object reference and used to protect messages
+    enum QOP {
+        SecQOPNoProtection,
+        SecQOPIntegrity,
+        SecQOPConfidentiality,
+        SecQOPIntegrityAndConfidentiality
+    };
+
+    // Association options which can be administered
+    // on secure invocation policy and used to
+    // initialize security context
+    typedef unsigned short    AssociationOptions;
+
+    const AssociationOptions NoProtection = 1;
+    const AssociationOptions Integrity = 2; 
+    const AssociationOptions Confidentiality = 4; 
+    const AssociationOptions DetectReplay = 8; 
+    const AssociationOptions DetectMisordering = 16;
+    const AssociationOptions EstablishTrustInTarget = 32; 
+    const AssociationOptions EstablishTrustInClient = 64;
+
+    // Flag to indicate whether association options being
+    // administered are the "required" or "supported" set
+    enum RequiresSupports {    
+        SecRequires,
+        SecSupports
+    };
+
+    // Direction of communication for which
+    // secure invocation policy applies
+    enum CommunicationDirection {     
+        SecDirectionBoth,
+        SecDirectionRequest,
+        SecDirectionReply
+    };
+
+    // AssociationOptions-Direction pair
+    struct OptionsDirectionPair {
+        AssociationOptions           options;
+        CommunicationDirection       direction;
+    };
+
+    typedef sequence <OptionsDirectionPair> OptionsDirectionPairList;
+
+
+    // Delegation mode which can be administered
+    enum DelegationMode {
+        SecDelModeNoDelegation,       // i.e. use own credentials
+        SecDelModeSimpleDelegation,   // delegate received credentials 
+        SecDelModeCompositeDelegation // delegate both; 
+    };
+
+    // Association options supported by a given mech type
+    struct MechandOptions {
+        MechanismType        mechanism_type;
+        AssociationOptions   options_supported;
+    };
+
+    typedef sequence <MechandOptions> MechandOptionsList;
+
+
+    // Audit 
+    typedef unsigned long  AuditChannelId;
+    typedef unsigned short EventType;
+
+    const EventType    AuditAll = 0;
+    const EventType    AuditPrincipalAuth = 1;
+    const EventType    AuditSessionAuth = 2;
+    const EventType    AuditAuthorization = 3;
+    const EventType    AuditInvocation = 4;
+    const EventType    AuditSecEnvChange = 5;
+    const EventType    AuditPolicyChange = 6;
+    const EventType    AuditObjectCreation = 7;
+    const EventType    AuditObjectDestruction = 8;
+    const EventType    AuditNonRepudiation = 9;
+
+    struct AuditEventType {
+        ExtensibleFamily    event_family;
+        EventType           event_type;
+    };
+
+    typedef sequence <AuditEventType> AuditEventTypeList;
+
+    typedef unsigned long SelectorType;
+
+    const SelectorType    InterfaceRef = 1;
+    const SelectorType    ObjectRef = 2;
+    const SelectorType    Operation = 3;
+    const SelectorType    Initiator = 4;
+    const SelectorType    SuccessFailure = 5;
+    const SelectorType    Time = 6;
+
+    // values defined for audit_needed and audit_write are:
+    // InterfaceRef: object reference
+    // ObjectRef: object reference
+    // Operation: op_name 
+    // Initiator: Credentials
+    // SuccessFailure: boolean
+    // Time: utc time on audit_write; time picked up from
+    // environment in audit_needed if required
+
+    struct SelectorValue {
+        SelectorType        selector;
+        any                 value;
+    };
+
+    typedef sequence <SelectorValue> SelectorValueList;
+
+    // Constant declaration for valid Security Policy Types
+    // General administrative policies
+    const CORBA::PolicyType SecClientInvocationAccess = 1;
+    const CORBA::PolicyType SecTargetInvocationAccess = 2;
+    const CORBA::PolicyType SecApplicationAccess      = 3;
+    const CORBA::PolicyType SecClientInvocationAudit  = 4;
+    const CORBA::PolicyType SecTargetInvocationAudit  = 5;
+    const CORBA::PolicyType SecApplicationAudit       = 6;
+    const CORBA::PolicyType SecDelegation             = 7;
+    const CORBA::PolicyType SecClientSecureInvocation = 8;
+    const CORBA::PolicyType SecTargetSecureInvocation = 9;
+    const CORBA::PolicyType SecNonRepudiation         = 10;
+
+
+    // Policies used to control attributes of a binding to a target
+    const CORBA::PolicyType SecMechanismsPolicy       = 12;
+    const CORBA::PolicyType SecCredentialsPolicy      = 13;
+    const CORBA::PolicyType SecFeaturesPolicy         = 14;
+    const CORBA::PolicyType SecQOPPolicy              = 15;
+
+};
+#endif /* _SECURITY_IDL */
+//File: SecurityAdmin.idl
+//Part of the Security Service
+
+#ifndef _SECURITY_ADMIN_IDL
+#define _SECURITY_ADMIN_IDL
+
+#include <SecurityLevel2.idl>
+
+#pragma prefix "omg.org"
+
+module SecurityAdmin {
+
+    // interface AccessPolicy
+    interface AccessPolicy : CORBA::Policy {
+        Security::RightsList get_effective_rights (
+            in   Security::AttributeList     attrib_list,
+            in   Security::ExtensibleFamily  rights_family
+        );
+    };
+
+    // interface DomainAccessPolicy
+    interface DomainAccessPolicy : AccessPolicy {
+
+        void grant_rights(
+            in   Security::SecAttribute      priv_attr,
+            in   Security::DelegationState   del_state,
+            in   Security::ExtensibleFamily  rights_family,
+            in   Security::RightsList        rights
+        );
+
+        void revoke_rights(
+            in   Security::SecAttribute      priv_attr,
+            in   Security::DelegationState   del_state,
+            in   Security::ExtensibleFamily  rights_family,
+            in   Security::RightsList        rights
+        );
+
+        void replace_rights (
+            in   Security::SecAttribute      priv_attr,
+            in   Security::DelegationState   del_state,
+            in   Security::ExtensibleFamily  rights_family,
+            in   Security::RightsList        rights
+        );
+
+        Security::RightsList get_rights (
+            in   Security::SecAttribute      priv_attr,
+            in   Security::DelegationState   del_state,
+            in   Security::ExtensibleFamily  rights_family
+        );
+    };
+
+    // interface AuditPolicy
+    interface AuditPolicy : CORBA::Policy {
+
+        void set_audit_selectors (
+            in   CORBA::InterfaceDef          object_type,
+            in   Security::AuditEventTypeList events,
+            in   Security::SelectorValueList  selectors 
+        );
+
+        void clear_audit_selectors (
+            in   CORBA::InterfaceDef          object_type,
+            in   Security::AuditEventTypeList events         
+        );
+
+        void replace_audit_selectors (
+            in   CORBA::InterfaceDef          object_type,
+            in   Security::AuditEventTypeList events,
+            in   Security::SelectorValueList  selectors 
+        ); 
+
+        Security::SelectorValueList get_audit_selectors (
+            in   CORBA::InterfaceDef           object_type,
+            in   Security::AuditEventTypeList  events
+        ); 
+
+        void set_audit_channel (
+            in   Security::AuditChannelId      audit_channel_id
+        );
+    };
+
+    // interface SecureInvocationPolicy
+    interface SecureInvocationPolicy : CORBA::Policy {
+
+        void set_association_options(
+            in   CORBA::InterfaceDef              object_type,
+            in   Security::RequiresSupports       requires_supports,
+            in   Security::CommunicationDirection direction,
+            in   Security::AssociationOptions     options 
+        );
+
+        Security::AssociationOptions get_association_options(
+            in   CORBA::InterfaceDef              object_type,
+            in   Security::RequiresSupports       requires_supports,
+            in   Security::CommunicationDirection direction
+        ); 
+    };
+
+    // interface DelegationPolicy
+    interface DelegationPolicy : CORBA::Policy {
+
+        void set_delegation_mode(
+            in   CORBA::InterfaceDef          object_type,
+            in   Security::DelegationMode     mode
+        );
+
+        Security::DelegationMode get_delegation_mode(
+            in   CORBA::InterfaceDef          object_type
+        );
+    };
+};
+
+#endif /* _SECURITY_ADMIN_IDL */
+//File: SecurityLevel1.idl
+//Part of the Security Service
+
+#ifndef _SECURITY_LEVEL_1_IDL
+#define _SECURITY_LEVEL_1_IDL
+
+#include <Security.idl>
+
+#pragma prefix "omg.org"
+
+module SecurityLevel1 {
+
+    interface Current : CORBA::Current {	// Locality Constrained
+
+        // thread specific operations
+
+        Security::AttributeList get_attributes (            
+            in    Security::AttributeTypeList  attributes 
+        );
+
+    };
+};
+#endif /* _SECURITY_LEVEL_1_IDL */
+//File: SecurityLevel2.idl
+//Part of the Security Service
+
+#ifndef _SECURITY_LEVEL_2_IDL
+#define _SECURITY_LEVEL_2_IDL
+
+#include <SecurityLevel1.idl>
+
+#pragma prefix "omg.org"
+
+module SecurityLevel2 {
+
+    // Forward declaration of interfaces
+    interface PrincipalAuthenticator;
+    interface Credentials;
+    interface Current;
+
+    // Interface PrincipalAuthenticator
+    interface PrincipalAuthenticator {    // Locality Constrained
+
+        Security::AuthenticationStatus authenticate (
+            in   Security::AuthenticationMethod    method,
+            in   Security::SecurityName            security_name,
+            in   Security::Opaque                  auth_data,
+            in   Security::AttributeList           privileges,
+            out  Credentials                       creds,
+            out  Security::Opaque                  continuation_data,
+            out  Security::Opaque                  auth_specific_data
+        );
+
+        Security::AuthenticationStatus continue_authentication (
+            in   Security::Opaque                  response_data,
+            in   Credentials                       creds,
+            out  Security::Opaque                  continuation_data,
+            out  Security::Opaque                  auth_specific_data
+        );
+    };
+
+
+    // Interface Credentials
+    interface Credentials {     // Locality Constrained
+
+        Credentials copy ();
+
+        void destroy();
+ 
+        void set_security_features (                
+            in   Security::CommunicationDirection   direction,
+            in   Security::SecurityFeatureValueList security_features
+        );
+
+        Security::SecurityFeatureValueList get_security_features (
+            in   Security::CommunicationDirection   direction
+        );
+
+        boolean set_privileges (
+            in   boolean                            force_commit,
+            in   Security::AttributeList            requested_privileges,
+            out  Security::AttributeList            actual_privileges
+        );
+
+        Security::AttributeList get_attributes (
+            in   Security::AttributeTypeList        attributes
+        );
+
+        boolean is_valid (
+            out  Security::UtcT                     expiry_time
+        );
+
+        boolean refresh();
+    };
+
+    typedef sequence <Credentials>  CredentialsList;
+
+
+    // RequiredRights Interface
+    interface RequiredRights{
+
+        void get_required_rights(
+            in   Object                             obj,
+            in   CORBA::Identifier                  operation_name,
+            in   CORBA::RepositoryId                interface_name,
+            out  Security::RightsList               rights,
+            out  Security::RightsCombinator         rights_combinator
+        );
+
+        void set_required_rights(
+            in   string                             operation_name,
+            in   CORBA::RepositoryId                interface_name,
+            in   Security::RightsList               rights,
+            in   Security::RightsCombinator         rights_combinator
+        );
+    };
+
+
+    // interface audit channel
+    interface AuditChannel {  // Locality Constrained
+
+        void audit_write (
+            in   Security::AuditEventType            event_type,
+            in   CredentialsList                     creds,  
+            in   Security::UtcT                      time,
+            in   Security::SelectorValueList         descriptors,
+            in   Security::Opaque                    event_specific_data
+        );
+
+        readonly attribute Security::AuditChannelId audit_channel_id;
+    };
+
+
+    // interface for Audit Decision 
+    interface AuditDecision {  // Locality Constrained
+
+        boolean audit_needed (
+            in   Security::AuditEventType            event_type,
+            in   Security::SelectorValueList         value_list
+        );
+
+        readonly attribute AuditChannel audit_channel;
+    };
+
+
+    interface AccessDecision {  // Locality Constrained
+
+        boolean access_allowed (
+            in   SecurityLevel2::CredentialsList     cred_list,
+            in   Object                              target,
+            in   CORBA::Identifier                   operation_name,
+            in   CORBA::Identifier                   target_interface_name
+        );
+    };
+
+
+    // Policy interfaces to control bindings
+
+    interface QOPPolicy : CORBA::Policy {  // Locality Constrained
+        readonly attribute Security::QOP qop;
+    };
+
+    interface MechanismPolicy : CORBA::Policy {   // Locality Constrained
+        readonly attribute Security::MechanismTypeList mechanisms;
+    };
+
+    interface SecurityFeaturesPolicy : CORBA::Policy {// Locality Constrained
+        readonly attribute Security::SecurityFeatureValueList features;
+    };
+
+    interface InvocationCredentialsPolicy : CORBA::Policy {
+                                                      // Locality Constrained
+        readonly attribute CredentialsList creds;
+    };
+
+    enum DelegationMode {Delegate, NoDelegate};
+
+
+    // Interface Current derived from SecurityLevel1::Current
+    // providing additional operations on Current at this
+    // security level. This is implemented by the ORB
+
+    interface Current : SecurityLevel1::Current {  // Locality Constrained
+
+    // Thread specific operations
+
+        readonly attribute CredentialsList received_credentials;
+        readonly attribute CredentialsList own_credentials;
+        readonly attribute Security::SecurityFeatureValueList
+                                        received_security_features;
+        void set_credentials (
+            in   Security::CredentialType          cred_type,
+            in   CredentialsList                   creds,
+            in   DelegationMode                    del
+        );
+
+        CredentialsList get_credentials (
+            in   Security::CredentialType          cred_type
+        );
+
+        CORBA::Policy get_policy (
+            in   CORBA::PolicyType                 policy_type
+        );
+
+    // Process/Capsule/ORB Instance specific operations
+
+        readonly attribute RequiredRights required_rights_object;
+        readonly attribute PrincipalAuthenticator principal_authenticator;
+        readonly attribute AccessDecision access_decision;
+        readonly attribute AuditDecision audit_decision;
+
+        // security names for given target
+        Security::SecurityMechandNameList get_security_names (
+            in   Object                            obj_ref
+        );
+
+        // Factory operations for local policies controlling bindings
+        QOPPolicy create_qop_policy(
+            in   Security::QOP                     qop
+        );
+
+        MechanismPolicy create_mechanism_policy(
+            in   Security::MechanismTypeList       mechanisms
+        );
+
+        InvocationCredentialsPolicy create_invoc_creds_policy(
+            in   CredentialsList                   creds
+        );
+    };
+};
+
+#endif /* _SECURITY_LEVEL_2_IDL */
+//File: SecurityReplaceable.idl
+//Part of the Security Service
+
+#ifndef _SECURITY_REPLACEABLE_IDL
+#define _SECURITY_REPLACEABLE_IDL
+
+#include <SecurityLevel2.idl>
+
+#pragma prefix "omg.org"
+
+module SecurityReplaceable {
+
+    interface SecurityContext;
+
+
+    interface Vault {   // Locality Constrained
+
+        Security::AssociationStatus init_security_context (
+            in   SecurityLevel2::CredentialsList    creds_list,
+            in   Security::SecurityName             target_security_name,
+            in   Object                             target,
+            in   Security::DelegationMode           delegation_mode,
+            in   Security::OptionsDirectionPairList association_options,
+            in   Security::MechanismType            mechanism,
+            in   Security::Opaque                   mech_data, //from IOR
+            in   Security::Opaque                   chan_binding,
+            out  Security::Opaque                   security_token,
+            out  SecurityContext                    security_context
+        );
+
+        Security::AssociationStatus accept_security_context (
+            in   SecurityLevel2::CredentialsList    creds_list,
+            in   Security::Opaque                   chan_bindings,
+            in   Security::Opaque                   in_token,
+            out  Security::Opaque                   out_token
+        );
+
+        Security::MechandOptionsList get_supported_mechs ();
+    };
+
+
+    interface SecurityContext {   // Locality Constrained
+
+        readonly attribute SecurityLevel2::CredentialsList
+                                                 received_credentials;
+
+        readonly attribute Security::SecurityFeatureValueList
+                                                security_features;
+
+        Security::AssociationStatus continue_security_context (
+            in   Security::Opaque      in_token,
+            out  Security::Opaque      out_token
+        );
+
+        void protect_message (
+            in   Security::Opaque      message,
+            in   Security::QOP         qop,
+            out  Security::Opaque      text_buffer,
+            out  Security::Opaque      token
+        );
+
+        boolean reclaim_message (
+            in   Security::Opaque      text_buffer,
+            in   Security::Opaque      token,
+            out  Security::QOP         qop,
+            out  Security::Opaque      message
+        );
+
+        boolean is_valid (
+            out  Security::UtcT        expiry_time
+        );
+
+        boolean refresh ();
+    };
+
+
+};
+
+#endif /* _SECURITY_REPLACEABLE_IDL */
+//File: SSLIOP.idl
+//Part of the Security Service
+
+#ifndef _SSLIOP_IDL
+#define _SSLIOP_IDL
+
+#include <IOP.idl>
+#include <Security.idl>
+
+#pragma prefix "omg.org"
+
+module SSLIOP {
+
+    // Security mechanism SSL
+    const IOP::ComponentId        TAG_SSL_SEC_TRANS = 20;
+
+    struct SSL {
+        Security::AssociationOptions    target_supports;
+        Security::AssociationOptions    target_requires;
+        unsigned short        port;
+    };
+};
+#endif /* _SSLIOP_IDL */
+//File: CosTrading.idl
+//Part of the Trading Object Service
+
+#ifndef _COS_TRADING_IDL_
+#define _COS_TRADING_IDL_
+#pragma prefix "omg.org"
+
+module CosTrading {
+
+	// forward references to our interfaces
+
+	interface Lookup;
+	interface Register;
+	interface Link;
+	interface Proxy;
+	interface Admin;
+	interface OfferIterator;
+	interface OfferIdIterator;
+
+	// type definitions used in more than one interface
+
+	typedef string Istring;
+	typedef Object TypeRepository;
+
+	typedef Istring PropertyName;
+	typedef sequence<PropertyName> PropertyNameSeq;
+	typedef any PropertyValue;
+	struct Property {
+		PropertyName name;
+		PropertyValue value;
+	};
+	typedef sequence<Property> PropertySeq;
+
+	struct Offer {
+		Object reference;
+		PropertySeq properties;
+	};
+	typedef sequence<Offer> OfferSeq;
+
+	typedef string OfferId;
+	typedef sequence<OfferId> OfferIdSeq;
+
+	typedef Istring ServiceTypeName;  // similar structure to IR::Identifier
+
+	typedef Istring Constraint;
+
+	enum FollowOption {
+		local_only, 
+		if_no_local, 
+		always
+	};
+
+	typedef Istring LinkName;
+	typedef sequence<LinkName> LinkNameSeq;
+	typedef LinkNameSeq TraderName;
+
+	typedef string PolicyName;  // policy names restricted to Latin1
+	typedef sequence<PolicyName> PolicyNameSeq;
+	typedef any PolicyValue;
+	struct Policy {
+		PolicyName name;
+		PolicyValue value;
+	};
+	typedef sequence<Policy> PolicySeq;
+
+	// exceptions used in more than one interface
+
+	exception UnknownMaxLeft {};
+
+	exception NotImplemented {};
+
+	exception IllegalServiceType {
+		ServiceTypeName type;
+	};
+
+	exception UnknownServiceType {
+		ServiceTypeName type;
+	};
+
+	exception IllegalPropertyName {
+		PropertyName name;
+	};
+
+	exception DuplicatePropertyName {
+		PropertyName name;
+	};
+	exception PropertyTypeMismatch {
+		ServiceTypeName type;
+		Property prop;
+	};
+
+	exception MissingMandatoryProperty {
+		ServiceTypeName type;
+		PropertyName name;
+	};
+
+	exception ReadonlyDynamicProperty {
+		ServiceTypeName type;
+		PropertyName name;
+	};
+
+	exception IllegalConstraint {
+		Constraint constr;
+	};
+
+	exception InvalidLookupRef {
+		Lookup target;
+	};
+	  
+	exception IllegalOfferId {
+		OfferId id;
+	};
+
+	exception UnknownOfferId {
+		OfferId id;
+	};
+
+	exception DuplicatePolicyName {
+		PolicyName name;
+	};
+
+	// the interfaces
+
+	interface TraderComponents {
+
+		readonly attribute Lookup lookup_if;
+		readonly attribute Register register_if;
+		readonly attribute Link link_if;
+		readonly attribute Proxy proxy_if;
+		readonly attribute Admin admin_if;
+	};
+
+	interface SupportAttributes {
+
+		readonly attribute boolean supports_modifiable_properties;
+		readonly attribute boolean supports_dynamic_properties;
+		readonly attribute boolean supports_proxy_offers;
+		readonly attribute TypeRepository type_repos;
+	};
+
+	interface ImportAttributes {
+
+		readonly attribute unsigned long def_search_card;
+		readonly attribute unsigned long max_search_card;
+		readonly attribute unsigned long def_match_card;
+		readonly attribute unsigned long max_match_card;
+		readonly attribute unsigned long def_return_card;
+		readonly attribute unsigned long max_return_card;
+		readonly attribute unsigned long max_list;
+		readonly attribute unsigned long def_hop_count;
+		readonly attribute unsigned long max_hop_count;
+		readonly attribute FollowOption def_follow_policy;
+		readonly attribute FollowOption max_follow_policy;
+	};
+
+	interface LinkAttributes {
+
+		readonly attribute FollowOption max_link_follow_policy;
+	};
+
+	interface Lookup:TraderComponents,SupportAttributes,ImportAttributes {
+
+		typedef Istring Preference;
+
+		enum HowManyProps { none, some, all };
+
+		union SpecifiedProps switch ( HowManyProps ) {
+			case some: PropertyNameSeq prop_names;
+		};
+
+		exception IllegalPreference {
+			Preference pref;
+		};
+
+		exception IllegalPolicyName {
+			PolicyName name;
+		};
+
+		exception PolicyTypeMismatch {
+			Policy the_policy;
+		};
+
+		exception InvalidPolicyValue {
+			Policy the_policy;
+		};
+
+		void query ( 
+			in ServiceTypeName type,
+			in Constraint constr,
+			in Preference pref,
+			in PolicySeq policies,
+			in SpecifiedProps desired_props,
+			in unsigned long how_many,
+			out OfferSeq offers,
+			out OfferIterator offer_itr,
+			out PolicyNameSeq limits_applied
+		) raises (
+			IllegalServiceType,
+			UnknownServiceType,
+			IllegalConstraint,
+			IllegalPreference,
+			IllegalPolicyName,
+			PolicyTypeMismatch,
+			InvalidPolicyValue,
+			IllegalPropertyName,
+			DuplicatePropertyName,
+			DuplicatePolicyName
+		);
+	};
+
+	interface Register : TraderComponents, SupportAttributes {
+
+		struct OfferInfo {
+			Object reference;
+			ServiceTypeName type;
+			PropertySeq properties;
+		};
+
+		exception InvalidObjectRef {
+			Object ref;
+		};
+
+		exception UnknownPropertyName {
+			PropertyName name;
+		};
+
+		exception InterfaceTypeMismatch {
+			ServiceTypeName type;
+			Object reference;
+		};
+
+		exception ProxyOfferId {
+			OfferId id;
+		};
+
+		exception MandatoryProperty {
+			ServiceTypeName type;
+			PropertyName name;
+		};
+
+		exception ReadonlyProperty {
+			ServiceTypeName type;
+			PropertyName name;
+		};
+
+		exception NoMatchingOffers {
+			Constraint constr;
+		};
+
+		exception IllegalTraderName {
+			TraderName name;
+		};
+
+		exception UnknownTraderName {
+			TraderName name;
+		};
+
+		exception RegisterNotSupported {
+			TraderName name;
+		};
+
+		OfferId export (
+			in Object reference,
+			in ServiceTypeName type,
+			in PropertySeq properties
+		) raises ( 
+			InvalidObjectRef,
+			IllegalServiceType,
+			UnknownServiceType,
+			InterfaceTypeMismatch, 
+			IllegalPropertyName, // e.g. prop_name = "<foo-bar"
+			PropertyTypeMismatch,
+			ReadonlyDynamicProperty,
+			MissingMandatoryProperty,
+			DuplicatePropertyName
+		);
+
+		void withdraw (
+			in OfferId id
+		) raises (
+			IllegalOfferId,
+			UnknownOfferId,
+			ProxyOfferId
+		);
+
+		OfferInfo describe (
+			in OfferId id
+		) raises (
+			IllegalOfferId,
+			UnknownOfferId,
+			ProxyOfferId
+		);
+
+		void modify (
+			in OfferId id,
+			in PropertyNameSeq del_list,
+			in PropertySeq modify_list
+		) raises ( 
+			NotImplemented,
+			IllegalOfferId, 
+			UnknownOfferId,
+			ProxyOfferId,
+			IllegalPropertyName,
+			UnknownPropertyName,
+			PropertyTypeMismatch,
+			ReadonlyDynamicProperty,
+			MandatoryProperty,
+			ReadonlyProperty,
+			DuplicatePropertyName
+		);
+
+		void withdraw_using_constraint (
+			in ServiceTypeName type,
+			in Constraint constr
+		) raises (
+			IllegalServiceType,
+			UnknownServiceType,
+			IllegalConstraint,
+			NoMatchingOffers
+		);
+
+		Register resolve (
+			in TraderName name
+		) raises (
+			IllegalTraderName,
+			UnknownTraderName,
+			RegisterNotSupported
+		);
+	};
+
+	interface Link : TraderComponents, SupportAttributes, LinkAttributes {
+
+		struct LinkInfo {
+			Lookup target;
+			Register target_reg;
+			FollowOption def_pass_on_follow_rule;
+			FollowOption limiting_follow_rule;
+		};
+
+		exception IllegalLinkName {
+			LinkName name;
+		};
+
+		exception UnknownLinkName {
+			LinkName name;
+		};
+
+		exception DuplicateLinkName {
+			LinkName name;
+		};
+		exception DefaultFollowTooPermissive {
+			FollowOption def_pass_on_follow_rule;
+			FollowOption limiting_follow_rule;
+		};
+
+		exception LimitingFollowTooPermissive {
+			FollowOption limiting_follow_rule;
+			FollowOption max_link_follow_policy;
+		};
+
+		void add_link ( 
+			in LinkName name,
+			in Lookup target,
+			in FollowOption def_pass_on_follow_rule,
+			in FollowOption limiting_follow_rule
+		) raises ( 
+			IllegalLinkName,
+			DuplicateLinkName,
+			InvalidLookupRef, // e.g. nil
+			DefaultFollowTooPermissive,
+			LimitingFollowTooPermissive
+		);
+
+		void remove_link (
+			in LinkName name
+		) raises (
+			IllegalLinkName,
+			UnknownLinkName
+		);
+
+		LinkInfo describe_link (
+			in LinkName name
+		) raises (
+			IllegalLinkName,
+			UnknownLinkName
+		);
+
+		LinkNameSeq list_links ( );
+
+		void modify_link ( 
+			in LinkName name,
+			in FollowOption def_pass_on_follow_rule,
+			in FollowOption limiting_follow_rule
+		) raises ( 
+			IllegalLinkName,
+			UnknownLinkName,
+			DefaultFollowTooPermissive,
+			LimitingFollowTooPermissive
+		);
+	};
+
+	interface Proxy : TraderComponents, SupportAttributes {
+
+		typedef Istring ConstraintRecipe;
+
+		struct ProxyInfo { 
+			ServiceTypeName type;
+			Lookup target;
+			PropertySeq properties;
+			boolean if_match_all;
+			ConstraintRecipe recipe;
+			PolicySeq policies_to_pass_on;
+		};
+
+		exception IllegalRecipe {
+			ConstraintRecipe recipe;
+		};
+
+		exception NotProxyOfferId {
+			OfferId id;
+		};
+
+		OfferId export_proxy (
+			in Lookup target,
+			in ServiceTypeName type,
+			in PropertySeq properties,
+			in boolean if_match_all,
+			in ConstraintRecipe recipe,
+			in PolicySeq policies_to_pass_on
+		) raises (
+			IllegalServiceType,
+			UnknownServiceType,
+			InvalidLookupRef, // e.g. nil
+			IllegalPropertyName,
+			PropertyTypeMismatch,
+			ReadonlyDynamicProperty,
+			MissingMandatoryProperty,
+			IllegalRecipe,
+			DuplicatePropertyName,
+			DuplicatePolicyName
+		);
+
+		void withdraw_proxy (
+			in OfferId id
+		) raises (
+			IllegalOfferId,
+			UnknownOfferId,
+			NotProxyOfferId
+		);
+
+		ProxyInfo describe_proxy (
+			in OfferId id
+		) raises (
+			IllegalOfferId,
+			UnknownOfferId,
+			NotProxyOfferId
+		);
+	};
+
+	interface Admin : TraderComponents, SupportAttributes, ImportAttributes,
+						LinkAttributes {
+
+		typedef sequence<octet> OctetSeq;
+
+		readonly attribute OctetSeq request_id_stem;
+
+		unsigned long set_def_search_card (in unsigned long value);
+		unsigned long set_max_search_card (in unsigned long value);
+
+		unsigned long set_def_match_card (in unsigned long value);
+		unsigned long set_max_match_card (in unsigned long value);
+
+		unsigned long set_def_return_card (in unsigned long value);
+		unsigned long set_max_return_card (in unsigned long value);
+
+		unsigned long set_max_list (in unsigned long value);
+
+		boolean set_supports_modifiable_properties (in boolean value);
+		boolean set_supports_dynamic_properties (in boolean value);
+		boolean set_supports_proxy_offers (in boolean value);
+
+		unsigned long set_def_hop_count (in unsigned long value);
+		unsigned long set_max_hop_count (in unsigned long value);
+
+		FollowOption set_def_follow_policy (in FollowOption policy);
+		FollowOption set_max_follow_policy (in FollowOption policy);
+
+		FollowOption set_max_link_follow_policy (in FollowOption policy);
+
+		TypeRepository set_type_repos (in TypeRepository repository);
+
+		OctetSeq set_request_id_stem (in OctetSeq stem);
+
+		void list_offers (
+			in unsigned long how_many,
+			out OfferIdSeq ids,
+			out OfferIdIterator id_itr
+		) raises (
+			NotImplemented
+		);
+
+		void list_proxies (
+			in unsigned long how_many,
+			out OfferIdSeq ids,
+			out OfferIdIterator id_itr
+		) raises (
+			NotImplemented
+		);
+	};
+
+	interface OfferIterator {
+
+		unsigned long max_left (
+		) raises (
+			UnknownMaxLeft
+		);
+
+		boolean next_n (
+			in unsigned long n,
+			out OfferSeq offers
+		);
+
+		void destroy ();
+	};
+
+	interface OfferIdIterator {
+		unsigned long max_left (
+		) raises (
+			UnknownMaxLeft
+		);
+
+		boolean next_n (
+			in unsigned long n,
+			out OfferIdSeq ids
+		);
+
+		void destroy ();
+	};
+
+}; /* end module CosTrading */
+
+#endif /* ifndef _COS_TRADING_IDL_ */
+
+//File: CosTradingDynamic.idl
+//Part of the Trading Object Service
+
+#ifndef _COS_TRADING_DYNAMIC_IDL_
+#define _COS_TRADING_DYNAMIC_IDL_
+
+#include <orb.idl>
+#include <CosTrading.idl>
+
+#pragma prefix "omg.org"
+
+module CosTradingDynamic {
+
+	exception DPEvalFailure {
+		CosTrading::PropertyName name;
+		CORBA::TypeCode returned_type;
+		any extra_info;
+	};
+
+	interface DynamicPropEval {
+
+		any evalDP (
+			in CosTrading::PropertyName name,
+			in CORBA::TypeCode returned_type,
+			in any extra_info
+		) raises (
+			DPEvalFailure
+		);
+	};
+
+	struct DynamicProp {
+		 DynamicPropEval eval_if;
+		 CORBA::TypeCode returned_type;
+		 any extra_info;
+	};
+}; /* end module CosTradingDynamic */
+
+#endif /* ifndef _COS_TRADING_DYNAMIC_IDL_ */
+
+//File: CosTradingRepos.idl
+//Part of the Trading Object Service
+
+#ifndef _COS_TRADING_REPOS_IDL_
+#define _COS_TRADING_REPOS_IDL_
+
+#include <orb.idl>
+#include <CosTrading.idl>
+
+#pragma prefix "omg.org"
+
+module CosTradingRepos {
+
+	interface ServiceTypeRepository {
+
+	// local types
+		typedef sequence<CosTrading::ServiceTypeName> ServiceTypeNameSeq;
+		enum PropertyMode {
+			PROP_NORMAL, PROP_READONLY,
+			PROP_MANDATORY, PROP_MANDATORY_READONLY
+		};
+		struct PropStruct {
+			CosTrading::PropertyName name;
+			CORBA::TypeCode value_type;
+			PropertyMode mode;
+		};
+		typedef sequence<PropStruct> PropStructSeq;
+
+		typedef CosTrading::Istring Identifier;  // IR::Identifier
+		struct IncarnationNumber {
+			unsigned long high;
+			unsigned long low;
+		};
+		struct TypeStruct {
+			Identifier if_name;
+			PropStructSeq props;
+			ServiceTypeNameSeq super_types;
+			boolean masked;
+			IncarnationNumber incarnation;
+		};
+
+		enum ListOption { all, since };
+		union SpecifiedServiceTypes switch ( ListOption ) {
+			case since: IncarnationNumber incarnation;
+		};
+
+	// local exceptions
+		exception ServiceTypeExists {
+			CosTrading::ServiceTypeName name;
+		};
+		exception InterfaceTypeMismatch {
+			CosTrading::ServiceTypeName base_service;
+			Identifier base_if;
+			CosTrading::ServiceTypeName derived_service;
+			Identifier derived_if;
+		};
+		exception HasSubTypes {
+			CosTrading::ServiceTypeName the_type;
+			CosTrading::ServiceTypeName sub_type;
+		};
+		exception AlreadyMasked {
+			CosTrading::ServiceTypeName name;
+		};
+		exception NotMasked {
+			CosTrading::ServiceTypeName name;
+		};
+		exception ValueTypeRedefinition {
+			CosTrading::ServiceTypeName type_1;
+			PropStruct definition_1;
+			CosTrading::ServiceTypeName type_2;
+			PropStruct definition_2;
+		};
+		exception DuplicateServiceTypeName {
+			CosTrading::ServiceTypeName name;
+		};
+
+	// attributes
+		readonly attribute IncarnationNumber incarnation;
+
+	// operation signatures
+		IncarnationNumber add_type (
+			in CosTrading::ServiceTypeName name,
+			in Identifier if_name,
+			in PropStructSeq props,
+			in ServiceTypeNameSeq super_types
+		) raises (
+			CosTrading::IllegalServiceType,
+			ServiceTypeExists,
+			InterfaceTypeMismatch,
+			CosTrading::IllegalPropertyName,
+			CosTrading::DuplicatePropertyName,
+			ValueTypeRedefinition,
+			CosTrading::UnknownServiceType,
+			DuplicateServiceTypeName
+		);
+				
+		void remove_type (
+			in CosTrading::ServiceTypeName name
+		) raises (
+			CosTrading::IllegalServiceType,
+			CosTrading::UnknownServiceType,
+			HasSubTypes
+		);
+
+		ServiceTypeNameSeq list_types (
+			in SpecifiedServiceTypes which_types
+		);
+
+		TypeStruct describe_type (
+			in CosTrading::ServiceTypeName name
+		) raises (
+			CosTrading::IllegalServiceType,
+			CosTrading::UnknownServiceType
+		);
+
+		TypeStruct fully_describe_type (
+			in CosTrading::ServiceTypeName name
+		) raises (
+			CosTrading::IllegalServiceType,
+			CosTrading::UnknownServiceType
+		);
+
+		void mask_type (
+			in CosTrading::ServiceTypeName name
+		) raises (
+			CosTrading::IllegalServiceType,
+			CosTrading::UnknownServiceType,
+			AlreadyMasked
+		);
+
+		void unmask_type (
+			in CosTrading::ServiceTypeName name
+		) raises (
+			CosTrading::IllegalServiceType,
+			CosTrading::UnknownServiceType,
+			NotMasked
+		);
+
+	};
+}; /* end module CosTradingRepos */
+#endif /* ifndef _COS_TRADING_REPOS_IDL_ */
+//File: CosCollection.idl
+//This is the single module for the Collection Service
+
+#ifndef _COS_COLLECTION_IDL_
+#define _COS_COLLECTION_IDL_
+#pragma prefix "omg.org"
+
+#include <orb.idl>
+
+module CosCollection { 
+
+	interface Collection;
+
+
+	//  T y p e   d e f i n i t i o n s
+
+	typedef sequence<any> AnySequence;
+	typedef string Istring;
+	struct NVPair {
+		Istring name; 
+		any value;
+	};
+	typedef sequence<NVPair> ParameterList; 
+
+	//  E x c e p t i o n s
+	exception  EmptyCollection{};
+	exception  PositionInvalid{};
+	enum IteratorInvalidReason {is_invalid, 
+								is_not_for_collection,  
+								is_const};
+
+	exception IteratorInvalid {IteratorInvalidReason why;};
+	exception IteratorInBetween{};
+	enum ElementInvalidReason {	element_type_invalid, 
+								positioning_property_invalid, 
+								element_exists};
+
+	exception ElementInvalid {ElementInvalidReason why;};
+	exception KeyInvalid {};
+	exception ParameterInvalid {unsigned long which; Istring why;}; 
+
+
+	// O p e r a t i o n s
+	interface Operations {
+
+		//  e l e m e n t   t y p e   s p e c i f i c   
+		//    i n f o r m a t i o n
+		readonly attribute CORBA::TypeCode element_type;
+		boolean check_element_type (in any element);
+		boolean equal (in any element1, in any element2);
+		long compare (in any element1, in any element2);
+		unsigned long hash (in any element, in unsigned long value);
+
+		//  k e y   r e t r i e v a l
+		any key (in any element);
+		
+		//  k e y   t y p e   s p e c i f i c   
+		//    i n f o r m a t i o n
+		readonly attribute CORBA::TypeCode key_type;
+		boolean check_key_type (in any key);
+		boolean key_equal (in any key1, in any key2);
+		long key_compare (in any key1, in any key2);
+		unsigned long key_hash (in any thisKey, 
+								in unsigned long value);
+		
+		//  d e s t r o y i n g
+		void destroy();
+		
+	};
+
+	interface Command {
+		boolean do_on (in any element);
+	};
+
+	interface Comparator { 
+		long compare (in any element1, in any element2);
+	};
+
+
+
+	// Iterators
+
+	// I t e r a t o r
+	interface Iterator { 
+
+		//  m o v i n g   i t e r a t o r s
+		boolean set_to_first_element ();
+		boolean set_to_next_element() raises (IteratorInvalid);
+		boolean set_to_next_nth_element (in unsigned long n)
+			raises  (IteratorInvalid); 
+
+		//  r e t r i e v i n g   e l e m e n t s
+		boolean retrieve_element (out any element)
+			raises (IteratorInvalid,  IteratorInBetween);
+		boolean retrieve_element_set_to_next (	
+				out any element, 
+				out boolean  more)
+			raises (IteratorInvalid, IteratorInBetween);
+		boolean retrieve_next_n_elements (	
+				in unsigned long n, 
+				out AnySequence result, 
+				out boolean more)
+			raises (IteratorInvalid,  IteratorInBetween); 
+		boolean not_equal_retrieve_element_set_to_next (
+				in  Iterator test,  
+				out any element)
+			raises (IteratorInvalid, IteratorInBetween); 
+
+		//   r e m o v i n g   e l e m e n t s
+		void remove_element() 
+			raises (IteratorInvalid, IteratorInBetween);
+		boolean remove_element_set_to_next()
+			raises (IteratorInvalid,  IteratorInBetween); 
+		boolean remove_next_n_elements (
+				in  unsigned long n, 
+				out unsigned long actual_number)
+			raises (IteratorInvalid, IteratorInBetween); 
+		boolean not_equal_remove_element_set_to_next (in Iterator test)
+			raises (IteratorInvalid, IteratorInBetween); 
+		
+		//  r e p l a c i n g   e l e m e n t s
+		void replace_element (in any element)
+			raises (IteratorInvalid, IteratorInBetween, ElementInvalid);
+		boolean replace_element_set_to_next (in any element)
+			raises(IteratorInvalid, IteratorInBetween, ElementInvalid);
+		boolean replace_next_n_elements (
+				in  AnySequence   elements, 
+				out unsigned long actual_number)
+			raises (IteratorInvalid, IteratorInBetween, ElementInvalid); 
+		boolean not_equal_replace_element_set_to_next (
+				in Iterator test, 
+				in any element)
+			raises(IteratorInvalid, IteratorInBetween, ElementInvalid); 
+		
+		//   a d d i n g   e l e m e n t s
+		boolean add_element_set_iterator (in any element)raises  
+			(ElementInvalid); 
+		boolean add_n_elements_set_iterator (
+				in  AnySequence elements, 
+				out unsigned long actual_number)
+			raises (ElementInvalid);
+		
+		//  s e t t i n g   i t e r a t o r   s t a t e
+		void invalidate (); 
+		
+		//  t e s t i n g   i t e r a t o r s
+		boolean is_valid ();
+		boolean is_in_between ();
+		boolean is_for(in Collection collector);
+		boolean is_const ();
+		boolean is_equal (in Iterator test) raises (IteratorInvalid); 
+		
+		//  c l o n i n g ,   a s s i g n i n g ,    
+		//    d e s t r o y i n g  i t e r a t o r s
+		Iterator clone ();
+		void assign (in Iterator from_where) raises (IteratorInvalid);
+		void destroy (); 
+		
+	};
+
+
+	// O r d e r e d I t e r a t o r
+	interface OrderedIterator: Iterator {
+
+		//   m o v i n g   i t e r a t o r s
+		boolean set_to_last_element ();
+		boolean set_to_previous_element() raises (IteratorInvalid);
+		boolean set_to_nth_previous_element(in unsigned long n)
+			raises  (IteratorInvalid);
+		void set_to_position (in unsigned long position) 
+			raises (PositionInvalid);
+		
+		//  c o m p u t i n g   i t e r a t o r   p o s i t i o n
+		unsigned long position () raises (IteratorInvalid); 
+		
+		//  r e t r i e v i n g   e l e m e n t s
+		boolean retrieve_element_set_to_previous(
+				out any element, 
+				out boolean more)
+			raises (IteratorInvalid, IteratorInBetween);
+		boolean retrieve_previous_n_elements (
+				in  unsigned long n, 
+				out AnySequence result, 
+				out boolean more)
+			raises (IteratorInvalid,  IteratorInBetween); 
+		boolean not_equal_retrieve_element_set_to_previous (
+				in Iterator  test, 
+				out any element)
+			raises (IteratorInvalid, IteratorInBetween); 
+
+		//   r e m o v i n g   e l e m e n t s
+		boolean remove_element_set_to_previous()
+			raises (IteratorInvalid,  IteratorInBetween); 
+		boolean remove_previous_n_elements (
+				in  unsigned long n, 
+				out unsigned long actual_number)
+			raises (IteratorInvalid, IteratorInBetween);
+		boolean not_equal_remove_element_set_to_previous(
+				in Iterator test)
+			raises (IteratorInvalid, IteratorInBetween); 
+
+		//  r e p l a c i n g   e l e m e n t s
+		boolean replace_element_set_to_previous(in any element)
+			raises (IteratorInvalid, IteratorInBetween, ElementInvalid);
+		boolean replace_previous_n_elements(
+				in  AnySequence   elements, 
+				out unsigned long actual_number)
+			raises (IteratorInvalid, IteratorInBetween, ElementInvalid); 
+		boolean not_equal_replace_element_set_to_previous (
+				in Iterator  test, 
+				in any       element)
+			raises (IteratorInvalid, IteratorInBetween, ElementInvalid); 
+		
+		//  t e s t i n g   i t e r a t o r s
+		boolean is_first ();
+		boolean is_last ();
+		boolean is_for_same (in Iterator test);
+		boolean is_reverse ();
+
+	};
+
+
+	// S e q u e n t i a l I t e r a t o r
+	interface SequentialIterator : OrderedIterator { 
+
+		// adding elements
+		boolean add_element_as_next_set_iterator (in any element)
+			raises(IteratorInvalid, ElementInvalid);
+		void add_n_elements_as_next_set_iterator(
+				in AnySequence elements)
+			raises(IteratorInvalid, ElementInvalid); 
+		boolean add_element_as_previous_set_iterator(in any element)
+			raises(IteratorInvalid, ElementInvalid);
+		void add_n_elements_as_previous_set_iterator(
+				in AnySequence  elements)
+			raises(IteratorInvalid, ElementInvalid);
+
+	};
+
+
+	// K e y I t e r a t o r
+	interface KeyIterator : Iterator { 
+		//  m o v i n g   t h e   i t e r a t o r s
+		boolean set_to_element_with_key (in any key) 
+			raises(KeyInvalid);
+		boolean set_to_next_element_with_key (in any key)
+			raises(IteratorInvalid, KeyInvalid);
+		boolean set_to_next_element_with_different_key()
+			raises (IteratorInBetween, IteratorInvalid); 
+		
+		//  r e t r i e v i n g   t h e   k e y s
+		boolean retrieve_key (out any key)
+			raises (IteratorInBetween,  IteratorInvalid);
+		boolean retrieve_next_n_keys (out AnySequence keys)
+			raises (IteratorInBetween, IteratorInvalid); 
+		
+	};
+
+
+	// E q u a l i t y I t e r a t o r
+	interface EqualityIterator : Iterator { 
+
+		//  m o v i n g   t h e   i t e r a t o r s
+		boolean set_to_element_with_value(in any element) 
+			raises(ElementInvalid);
+		boolean set_to_next_element_with_value(in any element)
+			raises (IteratorInvalid, ElementInvalid);
+		boolean set_to_next_element_with_different_value()
+			raises (IteratorInBetween, IteratorInvalid);
+
+	};
+
+
+
+	// E q u a l i t y K e y I t e r a t o r
+	interface EqualityKeyIterator : EqualityIterator, KeyIterator {};
+
+	// S o r t e d I t e r a t o r
+	interface SortedIterator : OrderedIterator {};
+
+
+	//  e n u m e r a t i o n   t y p e   f o r   s p e c i f y i n g   r a n g e s
+	enum LowerBoundStyle {equal_lo, greater, greater_or_equal};
+	enum UpperBoundStyle {equal_up, less, less_or_equal};
+
+	// K e y S o r t e d I t e r a t o r
+	interface KeySortedIterator : KeyIterator, SortedIterator {
+
+		//  m o v i n g   t h e   i t e r a t o r s
+		boolean set_to_first_element_with_key (
+				in any             key, 
+				in LowerBoundStyle style)
+			raises(KeyInvalid);
+		boolean set_to_last_element_with_key (
+				in any              key, 
+				in UpperBoundStyle  style)
+			raises (KeyInvalid); 
+		boolean set_to_previous_element_with_key (in any key)
+			raises(IteratorInvalid, KeyInvalid);
+		boolean set_to_previous_element_with_different_key()
+			raises (IteratorInBetween, IteratorInvalid); 
+		
+		//  r e t r i e v i n g   k e y s
+		boolean retrieve_previous_n_keys(out AnySequence keys)
+			raises (IteratorInBetween, IteratorInvalid);
+
+	};
+
+
+	// E q u a l i t y S o r t e d I t e r a t o r
+	interface EqualitySortedIterator : 
+					EqualityIterator, SortedIterator  {
+
+		//  m o v i n g   t h e   i t e r a t o r
+		boolean set_to_first_element_with_value (
+				in any             element, 
+				in LowerBoundStyle style)
+			raises (ElementInvalid);
+		boolean set_to_last_element_with_value (
+				in any             element, 
+				in UpperBoundStyle style)
+			raises (ElementInvalid); 
+		boolean set_to_previous_element_with_value (in any elementally)
+			raises (IteratorInvalid, ElementInvalid);
+		boolean set_to_previous_element_with_different_value()
+			raises (IteratorInBetween, IteratorInvalid);
+
+	};
+
+
+	// E q u a l i t y K e y S o r t e d I t e r a t o r
+	interface EqualityKeySortedIterator : 
+					EqualitySortedIterator,  KeySortedIterator {};
+
+	// E q u a l i t y S e q u e n t i a l I t e r a t o r
+	interface EqualitySequentialIterator : 
+					EqualityIterator,  SequentialIterator {
+
+		//  l o c a t i n g   e l e m e n t s
+		boolean set_to_first_element_with_value (in any element)
+			raises (ElementInvalid);
+		boolean set_to_last_element_with_value (in any element)
+			raises (ElementInvalid);
+		boolean set_to_previous_element_with_value (in any element)
+			raises (ElementInvalid);
+
+	};
+
+
+	interface Collection {
+	 //   e l e m e n t   t y p e   i n f o r m a t i o n
+		readonly attribute CORBA::TypeCode element_type;
+		
+		// a d d i n g   e l e m e n t s
+		boolean add_element (in any element) 
+			raises (ElementInvalid);
+		boolean add_element_set_iterator (
+				in any      element, 
+				in Iterator where) 
+			raises (IteratorInvalid, ElementInvalid); 
+		void add_all_from (in Collection collector) 
+			raises (ElementInvalid);
+		
+		//   r e m o v i n g   e l e m e n t s
+		void remove_element_at (in Iterator where) 
+			raises (IteratorInvalid,  IteratorInBetween); 
+		unsigned long remove_all ();
+		
+		//  r e p l a c i n g   e l e m e n t s
+		void replace_element_at (
+				in Iterator where, 
+				in any      element)
+			raises(IteratorInvalid, IteratorInBetween, ElementInvalid); 
+		
+		// r e t r i e v i n g   e l e m e n t s
+		boolean retrieve_element_at (
+				in  Iterator where, 
+				out any element)
+			raises (IteratorInvalid, IteratorInBetween); 
+		
+		// i t e r a t i n g   o v e r   t h e   c o l l e c t i o n
+		boolean all_elements_do (in Command what) ;
+		
+		//   i n q u i r i n g   c o l l e c t i o n   
+		//       i n f o r m a t i o n 
+		unsigned long number_of_elements ();
+		boolean is_empty ();
+		
+		//  d e s t r o y i n g   c o l l e c t i o n
+		void destroy(); 
+		
+		//  c r e a t i n g   i t e r a t o r s
+		Iterator create_iterator (in boolean read_only); 
+
+	}; 
+	
+	//  O r d e r e d C o l l e c t i o n
+	interface OrderedCollection: Collection {
+
+		//  r e m o v i n g   e l e m e n t s
+		void remove_element_at_position (in unsigned long position)
+			raises  (PositionInvalid);
+		void remove_first_element () raises (EmptyCollection);
+		void remove_last_element () raises (EmptyCollection); 
+		
+		//  r e t r i e v i n g   e l e m e n t s
+		boolean retrieve_element_at_position (
+				in  unsigned long position, 
+				out any           element)
+			raises (PositionInvalid);
+		boolean retrieve_first_element (out any element) 
+			raises  (EmptyCollection);
+		boolean retrieve_last_element (out any element) 
+			raises  (EmptyCollection);
+		
+		//  c r e a t i n g   i t e r a t o r s
+		OrderedIterator create_ordered_iterator(
+			in boolean read_only, 
+			in boolean reverse_iteration);
+		
+	}; 
+	
+	
+	// S e q u e n t i a l C o l l e c t i o n
+	interface SequentialCollection: OrderedCollection {
+
+		//   a d d i n g   e l e m e n t s   
+		void add_element_as_first (in any element) 
+			raises (ElementInvalid);
+		
+		void add_element_as_first_set_iterator (
+				in any       element, 
+				in Iterator  where)
+			raises (ElementInvalid, IteratorInvalid); 
+		void add_element_as_last (in any element) 
+			raises (ElementInvalid);
+		void add_element_as_last_set_iterator (
+				in any       element, 
+				in Iterator  where)
+			raises (ElementInvalid, IteratorInvalid); 
+		void add_element_as_next (
+				in any      element, 
+				in Iterator where)
+			raises  (ElementInvalid, IteratorInvalid); 
+		void add_element_as_previous (
+				in any      element, 
+				in Iterator where)
+			raises (ElementInvalid,IteratorInvalid); 
+		void add_element_at_position (
+				in unsigned long position, 
+				in any           element)
+			raises(PositionInvalid, ElementInvalid); 
+		void add_element_at_position_set_iterator (
+				in unsigned long  position, 
+				in any            element, 
+				in Iterator       where) 
+			raises  (PositionInvalid, ElementInvalid, IteratorInvalid); 
+		
+		//  r e p l a c i n g   e l e m e n t s
+		void replace_element_at_position (
+				in unsigned long position, 
+				in any           element)
+			raises (PositionInvalid, ElementInvalid);
+		void replace_first_element (in any element)
+			raises (ElementInvalid,  EmptyCollection);
+		void replace_last_element (in any element) 
+			raises (ElementInvalid,  EmptyCollection); 
+		
+		//  r e o r d e r i n g   e l e m e n t s
+		void sort (in Comparator comparison); void reverse(); 
+		
+	};
+	
+	
+	// S o r t e C o l l e c t i o n
+	interface SortedCollection: OrderedCollection{};
+	
+	// E q u a l i t y C o l l e c t i o n
+	interface EqualityCollection: Collection {
+
+		//  t e s t i n g   e l e m e n t   c o n t a i n m e n t
+		boolean contains_element (in any element) 
+			raises(ElementInvalid);
+		boolean contains_all_from (in Collection collector)  
+			raises(ElementInvalid); 
+		
+		//  a d d i n g   e l e m e n t s
+		boolean locate_or_add_element (in any element) 
+			raises (ElementInvalid); 
+		boolean locate_or_add_element_set_iterator (
+				in any      element, 
+				in Iterator where)
+			raises (ElementInvalid, IteratorInvalid); 
+		
+		//  l o c a t i n g   e l e m e n t s
+		boolean locate_element (
+				in any      element, 
+				in Iterator where) 
+			raises (ElementInvalid, IteratorInvalid);
+		boolean locate_next_element (
+				in any      element, 
+				in Iterator where)
+			raises (ElementInvalid, IteratorInvalid);
+		boolean locate_next_different_element (in Iterator where)
+			raises  (IteratorInvalid, IteratorInBetween);
+		
+		//  r e m o v i n g   e l e m e n t s
+		boolean remove_element (in any element) 
+			raises (ElementInvalid);
+		unsigned long remove_all_occurrences (in any element)
+			raises (ElementInvalid); 
+		
+		//  i n q u i r i n g   c o l l e c t i o n   
+		//      i n f o r m a t i o n
+		unsigned long number_of_different_elements ();
+		unsigned long number_of_occurrences (in any element) 
+			raises(ElementInvalid);
+		
+	};
+
+	// K e y C o l l e c t i o n
+	interface KeyCollection: Collection { 
+
+		//  K e y   t y p e   i n f o r m a t i o n
+		readonly attribute CORBA::TypeCode key_type; 
+		
+		//  t e s t i n g   c o n t a i n m e n t
+		boolean contains_element_with_key (in any key) 
+			raises(KeyInvalid);
+		boolean contains_all_keys_from (in KeyCollection collector)
+			raises(KeyInvalid);
+		
+		//  a d d i n g   e l e m e n t s
+		boolean locate_or_add_element_with_key (in any element)
+			raises(ElementInvalid);
+		boolean locate_or_add_element_with_key_set_iterator (
+				in any      element, 
+				in Iterator where)
+			raises (ElementInvalid,  IteratorInvalid);
+		
+		//  a d d i n g   o r   r e p l a c i n g   e l e m e n t s
+		boolean add_or_replace_element_with_key (in any element)
+			raises(ElementInvalid); 
+		boolean add_or_replace_element_with_key_set_iterator (
+				in any      element, 
+				in Iterator where)
+			raises (ElementInvalid,  IteratorInvalid); 
+		
+		//  r e m o v i n g   e l e m e n t s
+		boolean remove_element_with_key(in any key) 
+			raises(KeyInvalid);
+		unsigned long remove_all_elements_with_key (in any key) 
+			raises(KeyInvalid); 
+		
+		//  r e p l a c i n g   e l e m e n t s
+		boolean replace_element_with_key (in any element) 
+			raises(ElementInvalid);
+		boolean replace_element_with_key_set_iterator (
+				in any      element, 
+				in Iterator where)
+			raises (ElementInvalid, IteratorInvalid);
+		
+		//  r e t r i e v i n g   e l e m e n t s
+		boolean retrieve_element_with_key (
+				in  any key, 
+				out any element)
+			raises (KeyInvalid); 
+		
+		//  c o m p u t i n g   t h e   k e y s
+		void key (in any element, out any key) 
+			raises (ElementInvalid);
+		void keys (in AnySequence elements, out AnySequence keys)
+			raises (ElementInvalid);
+		
+		//  l o c a t i n g   e l e m e n t s
+		boolean locate_element_with_key (
+				in any      key, 
+				in Iterator where)
+			raises (KeyInvalid, IteratorInvalid);
+		boolean locate_next_element_with_key (
+				in any      key, 
+				in Iterator where)
+			raises (KeyInvalid, IteratorInvalid);
+		boolean locate_next_element_with_different_key (
+				in Iterator where)
+			raises (IteratorInBetween, IteratorInvalid);
+		
+		//  i n q u i r i n g   c o l l e c t i o n   
+		//      i n f o r m a t i o n
+		unsigned long number_of_different_keys ();
+		unsigned long number_of_elements_with_key (in any key) 
+			raises(KeyInvalid);
+		
+	};
+
+
+	// E q u a l i t y K e y C o l l e c t i o n
+	interface EqualityKeyCollection : 
+				EqualityCollection, KeyCollection{};
+
+	// K e y S o r t e d C o l l e c t i o n
+	interface KeySortedCollection : 
+				KeyCollection, SortedCollection { 
+
+		//  l o c a t i n g   e l e m e n t s
+		boolean locate_first_element_with_key (
+				in any      key, 
+				in Iterator where)
+			raises (KeyInvalid, IteratorInvalid); 
+		boolean locate_last_element_with_key(
+				in any      key, 
+				in Iterator where)
+			raises (KeyInvalid, IteratorInvalid);
+		boolean locate_previous_element_with_key (
+				in any      key, 
+				in Iterator where)
+			raises (KeyInvalid, IteratorInvalid); 
+		boolean locate_previous_element_with_different_key(
+				in Iterator  where)
+			raises (IteratorInBetween, IteratorInvalid);
+
+	};
+	
+	
+	// E q u a l i t y S o r t e d C o l l e c t i o n
+	interface EqualitySortedCollection : 
+						EqualityCollection,  SortedCollection {
+	
+		//  l o c a t i n g   e l e m e n t s
+		boolean locate_first_element (
+				in any      element, 
+				in Iterator where)
+			raises (ElementInvalid, IteratorInvalid);
+		boolean locate_last_element (
+				in any      element, 
+				in Iterator where)
+			raises (ElementInvalid, IteratorInvalid);
+		boolean locate_previous_element (
+				in any      element, 
+				in Iterator where)
+			raises  (ElementInvalid, IteratorInvalid);
+		boolean locate_previous_different_element (in Iterator where)
+			raises  (IteratorInvalid);
+
+	}; 
+	
+	
+	// E q u a l i t y K e y S o r t e d C o l l e c t i o n
+	interface EqualityKeySortedCollection : 
+			EqualityCollection, KeyCollection,  SortedCollection {};
+
+
+	// E q u a l i t y S e q u e n t i a l C o l l e c t i o n
+	interface EqualitySequentialCollection : 
+				EqualityCollection,  SequentialCollection  {
+
+		//  l o c a t i n g   e l e m e n t s
+		boolean locate_first_element_with_value (
+				in any      element, 
+				in Iterator where)
+			raises (ElementInvalid, IteratorInvalid);
+		boolean locate_last_element_with_value (
+				in any      element, 
+				in Iterator where)
+			raises (ElementInvalid, IteratorInvalid);
+		boolean locate_previous_element_with_value (
+				in any      element, 
+				in Iterator where)
+			raises (ElementInvalid, IteratorInvalid);
+		
+	};
+	
+	
+	// THE CONCRETE COLLECTION INTERFACES
+	
+	
+	// K e y S e t
+	interface KeySet: KeyCollection {};
+	
+	// K e y B a g
+	interface KeyBag: KeyCollection {};
+	
+	// M a p
+	interface Map : EqualityKeyCollection { 
+	
+		//  s e t   t h e o r e t i c a l   o p e r a t i o n s
+		void difference_with (in Map collector) 
+			raises (ElementInvalid);
+		void add_difference (
+				in Map collector1, 
+				in Map collector2) 
+			raises  (ElementInvalid);
+		void intersection_with (in Map collector) 
+			raises (ElementInvalid);
+		void add_intersection (
+				in Map collector1, 
+				in Map collector2)
+			raises  (ElementInvalid);
+		void union_with (in Map collector) 
+			raises (ElementInvalid);
+		void add_union (
+				in Map collector1, 
+				in Map collector2) 
+			raises (ElementInvalid);
+		
+		//   t e s t i n g   e q u a l i t y
+		boolean equal (in Map collector) 
+			raises (ElementInvalid);
+		boolean not_equal (in Map collector) 
+			raises(ElementInvalid);
+		
+	};
+	
+	
+	// R e l a t i o n
+	interface Relation : EqualityKeyCollection { 
+	
+		//  e q u a l ,   n o t _ e q u a l ,   a n d   t h e   
+		//  s e t - t h e o r e t i c a l   o p e r a t i o n s   a s   
+		//  d e f i n e d   f o r   M a p  
+	}; 
+
+
+	// S e t
+	interface Set : EqualityCollection { 
+	
+		//  e q u a l ,   n o t _ e q u a l ,   a n d   t h e   s e t   
+		//  t h e o r e t i c a l   o p e r a t i o n s   a s   
+		//  d e f i n e d   f o r   M a p
+	}; 
+	
+	
+	// B a g
+	interface Bag : EqualityCollection { 
+	
+		//  e q u a l ,   n o t _ e q u a l ,   a n d   t h e   s e t   
+		//  t h e o r e t i c a l   o p e r a t i o n s   a s   d e f i n e d   
+		//  d e f i n e d   f o r   M a p
+	
+	};
+	
+	
+	// K e y S o r t e d S e t
+	interface KeySortedSet : KeySortedCollection {
+		long compare (	in KeySortedSet collector, 
+						in Comparator comparison); 
+	};
+	
+	
+	// K e y S o r t e d B a g
+	interface KeySortedBag : KeySortedCollection {
+		long compare (	in KeySortedBag collector, 
+						in Comparator comparison); 
+	};
+
+
+	// S o r t e d M a p
+	interface SortedMap : EqualityKeySortedCollection { 
+	
+		//  e q u a l ,   n o t _ e q u a l ,   a n d   t h e   s e t   
+		// t h e o r e t i c a l   o p e r a t i o n s
+		long compare (	in SortedMap collector, 
+						in Comparator comparison);
+	};
+	
+	
+	// S o r t e d R e l a t i o n
+	interface SortedRelation : EqualityKeySortedCollection {
+	
+		//  e q u a l ,   n o t _ e q u a l ,   a n d   t h e   s e t
+		//  t h e o r e t i c a l   o p e r a t i o n s
+		long compare (	in SortedRelation collector, 
+						in Comparator  comparison);
+	};
+	
+	
+	// S o r t e d S e t
+	interface SortedSet : EqualitySortedCollection {
+	
+		// e q u a l ,   n o t _ e q u a l ,   a n d   t h e   s e t   
+		// t h e o r e t i c a l   o p e r a t i o n s
+		long compare (	in SortedSet collector, 
+						in Comparator comparison);
+	};
+	
+	
+	// S o r t e d B a g
+	interface SortedBag: EqualitySortedCollection { 
+	
+		//  e q u a l ,   n o t _ e q u a l ,   a n d   t h e   s e t
+		// t h e o r e t i c a l   o p e r a t i o n s
+		long compare (	in SortedBag collector, 
+						in Comparator comparison);
+	};
+	
+	
+	// S e q u e n c e
+	interface CSequence : SequentialCollection { 
+		//  C o m p a r i s o n
+		long compare (	in CSequence collector, 
+						in Comparator comparison);
+	};
+
+
+	// E q u a l i t y S e q u e n c e
+	interface EqualitySequence : EqualitySequentialCollection { 
+	
+		//  t e s t   o n   e q u a l i t y
+		boolean equal     (in EqualitySequence collector);
+		boolean not_equal (in EqualitySequence collector); 
+		//   c o m p a r i s o n
+		long compare (     in EqualitySequence collector, 
+						   in Comparator       comparison);
+	};
+	
+	
+	// H e a p
+	interface Heap : Collection {};
+
+
+	//  R e s t r i c t e d   A c c e s s   C o l l e c t i o n s 
+
+	interface RestrictedAccessCollection {
+
+		//  g e t t i n g   i n f o r m a t i o n   o n   
+		//      c o l l e c t i o n   s t a t e   
+		boolean unfilled ();
+		unsigned long size ();
+		
+		//  r e m o v i n g   e l e m e n t s
+		void purge ();
+	};
+
+
+	// Q u e u e
+	interface Queue : RestrictedAccessCollection {
+	
+		//  a d d i n g   e l e m e n t s
+		void enqueue (in any element) raises (ElementInvalid);
+		
+		//   r e m o v i n g   e l e m e n t s
+		void dequeue () raises (EmptyCollection);
+		boolean element_dequeue (out any element) 
+			raises (EmptyCollection);
+	}; 
+	
+	
+	// D e q u e
+	interface Deque : RestrictedAccessCollection {
+	
+		//  a d d i n g   e l e m e n t s
+		void enqueue_as_first (in any element) 
+			raises (ElementInvalid);
+		void enqueue_as_last (in any element) 
+			raises(ElementInvalid);
+	
+		//  r e m o v i n g   e l e m e n t s
+		void dequeue_first () raises (EmptyCollection);
+		boolean element_dequeue_first (out any element) 
+			raises (EmptyCollection);
+		void dequeue_last () raises (EmptyCollection);
+		boolean element_dequeue_last (out any element) 
+			raises (EmptyCollection);
+	
+	};
+
+
+	// S t a c k
+	interface Stack: RestrictedAccessCollection {
+
+		//  a d d i n g   e l e m e n t s
+		void push (in any element) raises (ElementInvalid);
+		
+		//  r e m o v i n g   a n d   r e t r i e v i n g   
+		//      e l e m e n t s
+		void pop () raises (EmptyCollection);
+		boolean element_pop (out any element) 
+			raises (EmptyCollection);
+		boolean top (out any element) 
+			raises (EmptyCollection);
+	};
+
+
+	// P r i o r i t y Q u e u e
+	interface PriorityQueue: RestrictedAccessCollection {
+		//  a d d i n g   e l e m e n t s
+		void enqueue (in any element) raises (ElementInvalid);
+	
+		//  r e m o v i n g   e l e m e n t s
+		void dequeue () raises (EmptyCollection);
+		boolean element_dequeue (out any element) 
+			raises (EmptyCollection);
+	};
+
+
+	// COLLECTION FACTORIES
+
+	// C o l l e c t i o n F a c t o r y
+	interface CollectionFactory { 
+		Collection generic_create (in ParameterList parameters)
+			raises (ParameterInvalid); 
+	};
+
+
+	// C o l l e c t i o n F a c t o r i e s
+	interface CollectionFactories : CollectionFactory { 
+		boolean add_factory (
+				in Istring            collection_interface, 
+				in Istring            impl_category, 
+				in Istring            impl_interface, 
+				in CollectionFactory  factory);
+		boolean remove_factory (
+				in Istring collection_interface, 
+				in Istring impl_category, 
+				in Istring impl_interface); 
+		Collection create (in ParameterList parameters) 
+			raises (ParameterInvalid);
+	}; 
+
+
+	// R A C o l l e c t i o n F a ct o r y
+	interface RACollectionFactory { 
+		RestrictedAccessCollection generic_create (
+				in ParameterList  parameters)
+			raises (ParameterInvalid); 
+	};
+
+
+	// R A C o l l e c t i o n F a c t o r i e s
+	interface RACollectionFactories : RACollectionFactory {
+		boolean add_factory (
+				in Istring              collection_interface, 
+				in Istring              impl_category, 
+				in Istring              impl_interface, 
+				in RACollectionFactory  factory); 
+		boolean remove_factory (
+				in Istring collection_interface, 
+				in Istring impl_category, 
+				in Istring impl_interface); 
+		Collection create ( in ParameterList parameters) 
+			raises (ParameterInvalid);
+	}; 
+
+
+	// K e y S e t F a c t o r y
+	interface KeySetFactory : CollectionFactory { 
+		KeySet create (	in Operations    ops, 
+						in unsigned long expected_size);
+	};
+
+	// K e y B a g F a c t o r y
+	interface KeyBagFactory : CollectionFactory {
+		KeyBag create ( in Operations    ops, 
+						in unsigned long expected_size);
+	};
+
+
+	// M a p F a c t o r y
+	interface MapFactory : CollectionFactory { 
+		Map create (in Operations    ops, 
+					in unsigned long expected_size);
+	};
+
+
+	// R e l a t i o n F a c t o r y
+	interface RelationFactory : CollectionFactory { 
+		Relation create (	in Operations    ops, 
+							in unsigned long expected_size);
+	};
+
+
+	// S e t F a c t o r y
+	interface SetFactory : CollectionFactory {
+		Set create (in Operations ops, 
+					in unsigned long expected_size);
+	};
+
+
+	// B a g F a c t o r y
+	interface BagFactory {
+		Bag create (in Operations ops, 
+					in unsigned long expected_size);
+	};
+
+
+	// K e y S o r t e d S e t F a c t o r y
+	interface KeySortedSetFactory { 
+		KeySortedSet create (in Operations    ops, 
+							 in unsigned long expected_size);
+	};
+
+
+	// K e y S o r t e d B a g F a c t o r y
+	interface KeySortedBagFactory : CollectionFactory {
+		KeySortedBag create (in Operations    ops, 
+							 in unsigned long expected_size);
+	}; 
+
+
+	// S o r t e d M a p F a c t o r y
+	interface SortedMapFactory : CollectionFactory {
+		SortedMap create (in Operations    ops, 
+						  in unsigned long expected_size);
+	};
+
+
+	// S o r t e d R e l a t i o n F a c t o r y
+	interface SortedRelationFactory : CollectionFactory {
+		SortedRelation create (	in Operations    ops, 
+								in unsigned long expected_size);
+	};
+
+
+	// S o r t e d S e t F a c t o r y
+	interface SortedSetFactory : CollectionFactory {
+		SortedSet create (	in Operations    ops, 
+							in unsigned long expected_size);
+	}; 
+
+
+	// S o r t e d B a g F a c t o r y
+	interface SortedBagFactory { 
+		SortedBag create (	in Operations    ops, 
+							in unsigned long expected_size);
+	};
+
+
+	// S e q u e n c e F a c t o r y
+	interface SequenceFactory : CollectionFactory {
+		CSequence create (	in Operations    ops, 
+							in unsigned long expected_size);
+	};
+
+
+	// E q u a l i t y S e q u e n c e F a c t o r y
+	interface EqualitySequenceFactory : CollectionFactory { 
+		EqualitySequence create (in Operations    ops, 
+								 in unsigned long expected_size);
+	};
+
+
+	// H e a p F a c t o r y
+	interface HeapFactory : CollectionFactory {
+		Heap create (in Operations    ops, 
+					 in unsigned long expected_size);
+	};
+
+
+	// Q u e u e F a c t o r y
+	interface QueueFactory : RACollectionFactory {
+		Queue create (	in Operations ops, 
+						in unsigned long expected_size);
+	};
+
+
+	// S t a c k F a c t o r y
+	interface StackFactory : RACollectionFactory {
+		Stack create (	in Operations    ops, 
+						in unsigned long expected_size);
+	};
+
+
+	// D e q u e F a c t o r y
+	interface DequeFactory : RACollectionFactory { 
+		Deque create (	in Operations    ops, 
+						in unsigned long expected_size);
+	};
+
+
+	// P r i o r i t y Q u e u e F a c t o r y
+	interface PriorityQueueFactory : RACollectionFactory {
+		PriorityQueue create (	in Operations    ops, 
+								in unsigned long expected_size);
+	};
+
+};
+#endif /* ifndef _COS_COLLECTION_IDL_ */

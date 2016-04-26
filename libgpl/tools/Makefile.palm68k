@@ -1,0 +1,119 @@
+# $Id$
+#
+
+PROGRAMS = colior.prc rdate.prc scanet.prc
+
+OBJS = *.o
+
+ROOT = ..
+LIBS = \
+	$(ROOT)/libgpl/libgpl.a \
+	$(ROOT)/libxdr/libxdr.a \
+	-lNetSocket
+APP = tools
+OCD_HEADERS = \
+	$(ROOT)/include/palm/*.h \
+	$(ROOT)/include/rpc/*.h \
+	$(ROOT)/include/*.h
+LD_SCRIPTS = \
+	$(APP)-sections.o \
+	$(APP)-sections.ld
+PILOT_MAINS = $(ROOT)/libgpl/StdIOPalm.o $(ROOT)/libgpl/SioMain.o
+
+ifeq ($(shell if test -d /usr/lib/gcc-lib/m68k-palmos/; then echo yes; fi), yes)
+GCC_INCLUDE = $(wildcard /usr/lib/gcc-lib/m68k-palmos/*/include)
+else
+GCC_INCLUDE = $(wildcard /usr/local/lib/gcc-lib/m68k-palmos/*/include)
+endif
+
+ifeq ($(shell if test -d /usr/m68k-palmos/include; then echo yes; fi), yes)
+PRC_INCLUDE = /usr/m68k-palmos/include
+else
+PRC_INCLUDE = /usr/local/m68k-palmos/include
+endif
+
+CC = m68k-palmos-gcc
+CFLAGS = -g -O -Wall $(PALMOS_OPTIONS)
+CPPFLAGS = \
+	-Dexit=return \
+	-DSECTIONS_BY_MODULE \
+	-nostdinc \
+	-I. \
+	-I$(ROOT)/include \
+	-I$(ROOT)/include/palm \
+	-I$(GCC_INCLUDE) \
+	-I$(PRC_INCLUDE)
+LINK.c = $(CC)
+LDFLAGS = $(PALMOS_OPTIONS)
+#LDFLAGS = $(PALMOS_OPTIONS) -Wl,-M
+MULTIGEN = m68k-palmos-multigen
+OBJDUMP = m68k-palmos-objdump
+OBJRES = m68k-palmos-obj-res
+BUILDPRC = build-prc
+RM = rm -f
+
+all::	$(PROGRAMS)
+
+$(APP).def: $(OCD_HEADERS)
+	$(RM) $@
+	echo "application {" $(APP) "cam }" > $@
+	echo "" >> $@
+	echo "multiple code {" >> $@
+	echo "    \"sio_appl\"" >> $@
+	grep -h '  OCD (' $(OCD_HEADERS) | grep -v define | sed -e 's/.*OCD ("\([^"]\{1,8\}\).*/    "\1"/' | sort | uniq >> $@
+	echo "}" >> $@
+
+$(APP)-sections.o: $(APP)-sections.s
+	$(CC) $(PALMOS_OPTIONS) -c $(APP)-sections.s
+
+$(APP)-sections.s $(APP)-sections.ld: $(APP).def
+	$(MULTIGEN) $(APP).def
+
+colior:  colior.o $(PILOT_MAINS) $(LD_SCRIPTS)
+	$(LINK.c) $(LDFLAGS) $(PILOT_MAINS) colior.o $(LD_SCRIPTS) $(LIBS) -o $@
+	$(RM) $@.def
+	echo "application {" $(APP) "cam }" > $@.def
+	echo "" >> $@.def
+	echo "multiple code {" >> $@.def
+	$(OBJDUMP) -h colior | awk '/^[ ]*[0-9][0-9]* [^\.]/ {print $$2}' >> $@.def
+	echo "}" >> $@.def
+	$(MULTIGEN) $@.def
+	$(CC) $(PALMOS_OPTIONS) -c $@-sections.s
+	$(LINK.c) $(LDFLAGS) $(PILOT_MAINS) colior.o $@-sections.o $@-sections.ld $(LIBS) -o $@
+
+colior.prc:  colior colior.def
+	$(BUILDPRC) -o $@ -t sdio -n Cmd-colior -c ALEX colior.def colior
+
+rdate:  rdate.o $(PILOT_MAINS) $(LD_SCRIPTS)
+	$(LINK.c) $(LDFLAGS) $(PILOT_MAINS) rdate.o $(LD_SCRIPTS) $(LIBS) -o $@
+	$(RM) $@.def
+	echo "application {" $(APP) "cam }" > $@.def
+	echo "" >> $@.def
+	echo "multiple code {" >> $@.def
+	$(OBJDUMP) -h rdate | awk '/^[ ]*[0-9][0-9]* [^\.]/ {print $$2}' >> $@.def
+	echo "}" >> $@.def
+	$(MULTIGEN) $@.def
+	$(CC) $(PALMOS_OPTIONS) -c $@-sections.s
+	$(LINK.c) $(LDFLAGS) $(PILOT_MAINS) rdate.o $@-sections.o $@-sections.ld $(LIBS) -o $@
+
+rdate.prc:  rdate rdate.def
+	$(BUILDPRC) -o $@ -t sdio -n Cmd-rdate -c ALEX rdate.def rdate
+
+scanet:  scanet.o $(PILOT_MAINS) $(LD_SCRIPTS)
+	$(LINK.c) $(LDFLAGS) $(PILOT_MAINS) scanet.o $(LD_SCRIPTS) $(LIBS) -o $@
+	$(RM) $@.def
+	echo "application {" $(APP) "cam }" > $@.def
+	echo "" >> $@.def
+	echo "multiple code {" >> $@.def
+	$(OBJDUMP) -h scanet | awk '/^[ ]*[0-9][0-9]* [^\.]/ {print $$2}' >> $@.def
+	echo "}" >> $@.def
+	$(MULTIGEN) $@.def
+	$(CC) $(PALMOS_OPTIONS) -c $@-sections.s
+	$(LINK.c) $(LDFLAGS) $(PILOT_MAINS) scanet.o $@-sections.o $@-sections.ld $(LIBS) -o $@
+
+scanet.prc:  scanet scanet.def
+	$(BUILDPRC) -o $@ -t sdio -n Cmd-scanet -c ALEX scanet.def scanet
+
+clean::
+	-$(RM) $(OBJS) $(PROGRAMS) $(PROGRAMS:.prc=)
+	-$(RM) $(APP).def $(APP)-sections.*

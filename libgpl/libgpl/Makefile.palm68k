@@ -1,0 +1,120 @@
+# $Id: Makefile.palm68k,v 1.3 2012/09/29 01:16:24 alex Exp alex $
+#
+
+LIBRARY = libgpl
+
+SRCS =	\
+	aperror.c \
+	bio_util.c \
+	bit_util.c \
+	bmw_util.c \
+	coli_util.c \
+	comx_util.c \
+	crlf_util.c \
+	dae_util.c \
+	damx_util.c \
+	f1750a_util.c \
+	ffs.c \
+	fnm_util.c \
+	get_util.c \
+	gimx_util.c \
+	gsc_util.c \
+	hash_util.c \
+	id3_util.c \
+	ieee_util.c \
+	iiop_util.c \
+	iox_util.c \
+	lfn_util.c \
+	list_util.c \
+	log_util.c \
+	meo_util.c \
+	net_util.c \
+	nft_util.c \
+	nvl_util.c \
+	nvp_util.c \
+	opt_util.c \
+	port_util.c \
+	rex_util.c \
+	rex_util_y.c \
+	skt_util.c \
+	std_util.c \
+	str_util.c \
+	tcp_util.c \
+	tpl_util.c \
+	tv_util.c \
+	udp_util.c \
+	utf_util.c \
+	vim_util.c \
+	wcs_util.c \
+	xnet_util.c
+
+#	bomx_util.c	# Bonobo EventType conflicts with Palm's EventType.
+#	drs_util.c
+#	lemx_util.c
+#	nft_proc.c
+#	ts_util.c
+
+OBJS = $(SRCS:.c=.o)
+
+ROOT = ..
+APP = $(LIBRARY)
+OCD_HEADERS = \
+	$(ROOT)/include/palm/*.h \
+	$(ROOT)/include/rpc/*.h \
+	$(ROOT)/include/*.h
+LD_SCRIPTS = \
+	$(APP)-sections.o \
+	$(APP)-sections.ld
+PILOT_MAIN = StdIOPalm.o SioMain.o
+
+ifeq ($(shell if test -d /usr/lib/gcc-lib/m68k-palmos/; then echo yes; fi), yes)
+GCC_INCLUDE = $(wildcard /usr/lib/gcc-lib/m68k-palmos/*/include)
+else
+GCC_INCLUDE = $(wildcard /usr/local/lib/gcc-lib/m68k-palmos/*/include)
+endif
+
+ifeq ($(shell if test -d /usr/m68k-palmos/include; then echo yes; fi), yes)
+PRC_INCLUDE = /usr/m68k-palmos/include
+else
+PRC_INCLUDE = /usr/local/m68k-palmos/include
+endif
+
+AR = m68k-palmos-ar
+ARFLAGS = rv
+CC = m68k-palmos-gcc
+CFLAGS = -g -O -Wall $(PALMOS_OPTIONS)
+CPPFLAGS = \
+	-nostdinc \
+	-I. \
+	-I$(ROOT)/include \
+	-I$(ROOT)/include/palm \
+	-I$(GCC_INCLUDE) \
+	-I$(PRC_INCLUDE)
+MULTIGEN = m68k-palmos-multigen
+RANLIB = m68k-palmos-ranlib
+RM = rm -f
+
+all::	$(LIBRARY).a $(PILOT_MAIN) $(APP).def $(APP)-sections.o
+
+$(LIBRARY).a: $(OBJS)
+	$(RM) $@
+	$(AR) $(ARFLAGS) $@ $(OBJS)
+	$(RANLIB) $@
+
+$(APP).def: $(OCD_HEADERS)
+	$(RM) $@
+	echo "application {" $(APP) "cam }" > $@
+	echo "" >> $@
+	echo "multiple code {" >> $@
+	grep -h '  OCD (' $(OCD_HEADERS) | grep -v define | sed -e 's/.*OCD (/    /' | sed -e 's/).*//' | sort | uniq >> $@
+	echo "}" >> $@
+
+$(APP)-sections.o: $(APP)-sections.s
+	$(CC) $(PALMOS_OPTIONS) -c $(APP)-sections.s
+
+$(APP)-sections.s $(APP)-sections.ld: $(APP).def
+	$(MULTIGEN) $(APP).def
+
+clean::
+	-$(RM) $(OBJS) $(LIBRARY).a
+	-$(RM) $(PILOT_MAIN) $(APP).def $(APP)-sections.*

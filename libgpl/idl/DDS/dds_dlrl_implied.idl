@@ -1,0 +1,203 @@
+
+
+#include "dds_dlrl.idl"
+
+valuetype Foo : DLRL::ObjectRoot {
+    public long a;
+    };
+
+valuetype FooRef;       // must be said in XML that is Ref<Foo>
+valuetype FooStrMap;    // must be said in XML that is StrMap<Foo>
+
+valuetype Bar : DLRL::ObjectRoot {
+    public string b;
+    public FooRef    a_foo;
+    public FooStrMap some_foos;
+
+    Foo op (
+        in Foo in_foo,
+        inout Foo inout_foo,
+        out Foo out_foo);
+    };
+
+/*************************
+ * DERIVED CLASSES FOR Foo
+ *************************/
+
+typedef sequence<Foo> FooSeq;
+
+local interface FooListener : DLRL::ObjectListener {
+    boolean on_object_created (
+        in Foo the_object);
+    boolean on_object_modified (
+        in Foo the_object);
+    boolean on_object_deleted (
+        in Foo the_object);
+    };
+
+local interface FooSelectionListener : DLRL::SelectionListener {
+    void on_object_in (
+        in Foo the_object);
+    void on_object_modified (
+        in Foo the_object);
+    void on_object_out (
+        in Foo the_object);
+    };
+
+local interface FooFilter : DLRL::ObjectFilter {
+    boolean check_object (
+        in Foo an_object);
+    FooSeq filter (
+        in FooSeq objects);
+    };
+
+local interface FooQuery : DLRL::ObjectQuery, FooFilter {
+    };
+
+local interface FooSelection : DLRL::Selection {
+    readonly attribute FooFilter            filter;
+    readonly attribute FooSeq               members;
+    readonly attribute FooSelectionListener listener;
+
+    void attach_listener (
+        in FooSelectionListener listener);
+    };
+typedef sequence<FooSelection> FooSelectionSeq;
+
+local interface FooHome: DLRL::ObjectHome {
+    readonly attribute FooSeq           extent;
+    readonly attribute FooSelectionSeq  selections;
+    readonly attribute FooListener      listener;
+    void attach_lister (
+        in FooListener listener);
+    FooSelection create_selection (
+        in FooFilter filter,
+        in boolean auto_refresh)
+        raises (
+            DLRL::BadParameter);
+    void delete_selection (
+        in FooSelection a_selection)
+        raises (
+            DLRL::BadParameter); 
+    Foo create_object(
+        in DLRL::CacheAccess access)
+        raises (
+            DLRL::ReadOnlyMode);
+    Foo find_object (
+        in DLRL::DLRLOid  oid,
+        in DLRL::CacheAccess access)
+        raises (
+            DLRL::NotFound);
+    };
+
+/*************************
+ * DERIVED CLASSES FOR Bar
+ *************************/
+
+typedef sequence<Bar> BarSeq;
+
+local interface BarListener : DLRL::ObjectListener {
+    boolean on_object_created (
+        in Bar the_object);
+    boolean on_object_modified (
+        in Bar the_object);
+    boolean on_object_deleted (
+        in Bar the_object);
+    };
+
+local interface BarSelectionListener : DLRL::SelectionListener {
+    void on_object_in (
+        in Bar the_object);
+    void on_object_modified (
+        in Bar the_object);
+    void on_object_out (
+        in Bar the_object);
+    };
+
+local interface BarFilter : DLRL::ObjectFilter {
+    boolean check_object (
+        in Bar an_object);
+    BarSeq filter (
+        in BarSeq objects);
+    };
+
+local interface BarQuery : DLRL::ObjectQuery, BarFilter {
+    };
+
+local interface BarSelection : DLRL::Selection {
+    readonly attribute BarFilter            filter;
+    readonly attribute BarSeq               members;
+    readonly attribute BarSelectionListener listener;
+
+    void attach_listener (
+        in BarSelectionListener listener);
+    };
+typedef sequence<BarSelection> BarSelectionSeq;
+
+local interface BarHome: DLRL::ObjectHome {
+    readonly attribute BarSeq           extent;
+    readonly attribute BarSelectionSeq  selections;
+    readonly attribute BarListener      listener;
+    void attach_lister (
+        in BarListener listener);
+    BarSelection create_selection (
+        in BarFilter filter,
+        in boolean auto_refresh)
+        raises (
+            DLRL::BadParameter);
+    void delete_selection (
+        in BarSelection a_selection)
+        raises (
+            DLRL::BadParameter); 
+    Bar create_object(
+        in DLRL::CacheAccess access)
+        raises (
+            DLRL::ReadOnlyMode);
+    Bar find_object (
+        in DLRL::DLRLOid  oid,
+        in DLRL::CacheAccess access)
+        raises (
+            DLRL::NotFound);
+    };
+
+/************************************
+ * Derived class for relations in Bar
+ ************************************/
+valuetype FooRef : DLRL::RefRelation {          // Ref<Foo>
+    void set(
+        in Foo object);
+    };
+
+valuetype FooList : DLRL::ListRelation {        // List<Foo>
+    void put (
+        in long index,
+        in Foo a_foo);
+    Foo get (
+        in long index)
+        raises (
+            DLRL::NotFound);
+    };
+
+valuetype FooStrMap : DLRL::StrMapRelation {    // StrMap<Foo>
+    void put (
+        in string key,
+        in Foo a_foo);
+    Foo get (
+        in string Key)
+        raises (
+            DLRL::NotFound);
+    void remove (
+        in string Key);
+    };
+
+valuetype FooIntMap : DLRL::IntMapRelation {    // IntMap<Foo>
+    void put (
+        in long key,
+        in Foo a_foo);
+    Foo get (
+        in long Key)
+        raises (
+            DLRL::NotFound);
+    void remove (
+        in long Key);
+    };

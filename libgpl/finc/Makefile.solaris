@@ -1,0 +1,59 @@
+# $Id: Makefile.solaris,v 1.1 2009/09/26 19:34:02 alex Exp alex $
+#
+
+PROGRAMS = finc nicl
+
+LIBRARY = libfinc.a
+
+SRCS = \
+	words_drs.c \
+	words_lfn.c \
+	words_misc.c \
+	words_net.c \
+	words_iox.c \
+	words_skt.c \
+	words_tcp.c \
+	words_tv.c
+
+OBJS = $(SRCS:.c=.o)
+
+FICL_INC = /usr/local/include/ficl
+FICL_LIB = /usr/local/lib
+
+ROOT = ..
+LIBS = \
+	$(ROOT)/libgpl/libgpl.a \
+	$(FICL_LIB)/libficl.a \
+	-lsocket -lnsl -lm
+INSTALL_DIR = $(HOME)/local/bin/$(arch)
+
+ARFLAGS = rv
+CC = gcc
+CFLAGS = -g -Wall -pedantic
+CPPFLAGS = \
+	-I. \
+	-I$(ROOT)/include \
+	-I$(FICL_INC)
+LINK.c = $(CC)
+LDFLAGS = -g
+RANLIB = ranlib
+RM = rm -f
+
+all::	$(LIBRARY) $(PROGRAMS)
+
+finc: finc.o $(LIBRARY)
+	$(LINK.c) $(LDFLAGS) -o $@ finc.o $(LIBRARY) $(LIBS)
+
+nicl: nicl.o $(LIBRARY)
+	$(LINK.c) $(LDFLAGS) -o $@ nicl.o $(LIBRARY) $(LIBS)
+
+$(LIBRARY): $(OBJS)
+	$(RM) $@
+	$(AR) $(ARFLAGS) $@ $(OBJS)
+	$(RANLIB) $@
+
+clean::
+	-$(RM) *.o $(LIBRARY) $(PROGRAMS)
+
+install:
+	cp $(PROGRAMS) $(INSTALL_DIR)

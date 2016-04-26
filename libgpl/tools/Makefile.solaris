@@ -1,0 +1,76 @@
+# $Id: Makefile.solaris,v 1.3 2011/03/31 22:37:20 alex Exp $
+#
+
+PROGRAMS = \
+	chafn colior dirtree dump duop ffc frob gflow hls \
+	pjoin rname scanet tag311 talknet wst
+
+ROOT = ..
+INCLUDE_DIR = $(ROOT)/include
+LIBS = \
+	$(ROOT)/libgpl/libgpl.a \
+	-lsocket -lnsl -lm -lw
+
+INSTALL_DIR = $(HOME)/local/bin/$(ARCH)
+
+CC = gcc
+CFLAGS = -g -O -Wall
+#CC = cc
+#CFLAGS = -g -Xa
+CPPFLAGS = -I. -I$(INCLUDE_DIR)
+LINK.c = $(CC)
+RM = rm -f
+
+all::	$(PROGRAMS)
+
+chafn:  chafn.o
+	$(LINK.c) chafn.o $(LIBS) -o $@
+
+colior:  colior.o
+	$(LINK.c) colior.o $(LIBS) -o $@
+
+dirtree:  dirtree.o
+	$(LINK.c) dirtree.o $(LIBS) -o $@
+
+dump:  dump.o
+	$(LINK.c) dump.o $(LIBS) -o $@
+
+duop:  duop.o
+	$(LINK.c) duop.o $(LIBS) -o $@
+
+ffc:  ffc.o
+	$(LINK.c) ffc.o $(LIBS) -o $@
+
+frob:  frob.o
+	$(LINK.c) frob.o $(LIBS) -o $@
+
+gflow:  gflow.o
+	$(LINK.c) gflow.o $(LIBS) -o $@
+
+hls:  hls.o
+	$(LINK.c) hls.o $(LIBS) -o $@
+
+pjoin:  pjoin.o
+	$(LINK.c) pjoin.o $(LIBS) -o $@
+
+rname:  rname.o
+	$(LINK.c) rname.o $(LIBS) -o $@
+
+scanet:  scanet.o
+	$(LINK.c) scanet.o $(LIBS) -o $@
+
+tag311:  tag311.o
+	$(LINK.c) tag311.o $(LIBS) -o $@
+
+talknet:  talknet.o
+	$(LINK.c) talknet.o $(LIBS) -o $@
+
+wst:  wst.o
+	$(LINK.c) wst.o $(LIBS) -o $@
+
+clean::
+	-$(RM) $(PROGRAMS)
+	-$(RM) *.o
+
+install:
+	cp $(PROGRAMS) $(INSTALL_DIR)

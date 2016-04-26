@@ -1,0 +1,37 @@
+// $Id: DAFIdentifiers.idl,v 1.1 2003/05/29 00:26:31 alex Exp $
+//File: DAFIdentifiers.idl
+#ifndef _DAF_IDENTIFIERS_IDL_
+#define _DAF_IDENTIFIERS_IDL_
+
+#pragma prefix "omg.org"
+module DAFIdentifiers
+{
+	// the uniform resource identifier from IETF RFC 2396
+	typedef string URI;
+	typedef sequence< URI > URISequence;
+
+	// the resource identifier 
+	struct ResourceID
+	{
+		unsigned long long container;
+		unsigned long long fragment;
+	};
+	typedef sequence < ResourceID > ResourceIDSequence;
+
+	// service for translating and managing resource identifiers
+	exception LookupError {		string reason; };
+
+	interface ResourceIDService
+	{
+		ResourceIDSequence get_resource_ids( 
+			in URISequence uris )
+			raises( LookupError );
+
+		URISequence get_uris(
+			in ResourceIDSequence ids ) 
+			raises( LookupError );
+	};
+};
+#endif // _DAF_IDENTIFIERS_IDL_
+
+

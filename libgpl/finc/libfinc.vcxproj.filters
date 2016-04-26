@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{aaeef137-40d5-4768-bc8d-5cdad6f06d83}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{5535bf0e-8e9c-4f03-942b-a6b346df52b8}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="words_drs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="words_iox.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="words_lfn.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="words_misc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="words_net.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="words_skt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="words_tcp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="words_tv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="finc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

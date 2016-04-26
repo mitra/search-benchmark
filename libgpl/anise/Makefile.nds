@@ -1,0 +1,69 @@
+# $Id: Makefile.nds,v 1.3 2012/05/06 22:26:42 alex Exp alex $
+#
+
+PROGRAM = anise
+
+SRCS = \
+	anise.c \
+	ftpClient.c \
+	http_util.c \
+	passClient.c \
+	wwwClient.c
+
+OBJS = StdIONDS.o $(SRCS:.c=.o)
+
+#*******************************************************************************
+#    Define the ARM-specific compilation tools to be used.  (Most NDS
+#    developers include devkitPro's "base_rules" and "ds_rules" for these
+#    definitions and for the suffix rules, but these files were written
+#    without following the conventions used in Make's implicit rules.
+#    The implicit rules work just fine for C and C++ files.)
+#PREFIX	=	arm-eabi-
+PREFIX	=	arm-none-eabi-
+CC	=	$(PREFIX)gcc
+LD	=	$(PREFIX)gcc
+OBJCOPY	=	$(PREFIX)objcopy
+#*******************************************************************************
+
+ROOT = ..
+LIBS = \
+	$(ROOT)/libgpl/libgpl.a \
+	$(ROOT)/libxdr/libxdr.a \
+	-L$(DEVKITPRO)/libnds/lib -ldswifi9 -lfat -lnds9
+
+CPPFLAGS := \
+	-DNDS \
+	-DARM9 \
+	-I. \
+	-I$(ROOT)/include \
+	-I$(DEVKITPRO)/libnds/include
+
+#	-I/opt/devkitProSource/dswifi-src-0.3.6/arm9/source \
+#	-I/opt/devkitProSource/dswifi-src-0.3.6/common/source \
+
+CFLAGS := \
+	-g -Wall -O2 \
+	-ffast-math -fomit-frame-pointer \
+	-march=armv5te -mtune=arm946e-s \
+	-mthumb -mthumb-interwork
+
+LDFLAGS := \
+	-specs=ds_arm9.specs \
+	-mthumb -mthumb-interwork
+
+all::	$(PROGRAM).nds
+
+$(PROGRAM).nds: $(OBJS)
+	$(LD) $(LDFLAGS) -o $(PROGRAM).elf $(OBJS) $(LIBS)
+	$(OBJCOPY) -O binary $(PROGRAM).elf $(PROGRAM).arm9
+	ndstool -c $@ -9 $(PROGRAM).arm9 \
+		-b images/$(PROGRAM).bmp "Anise;Another Internet Server;CSoft"
+
+$(PROGRAM).o: $(PROGRAM).c
+	$(COMPILE.c) -Dmain=$(PROGRAM) -o $@ $<
+
+StdIONDS.o: $(ROOT)/libgpl/StdIONDS.c
+	$(COMPILE.c) -DPROGRAM=$(PROGRAM) -DSPROGRAM=\"$(PROGRAM)\" -DDSWIFI -o $@ $<
+
+clean::
+	-$(RM) $(OBJS) $(PROGRAM).nds $(PROGRAM).arm9 $(PROGRAM).elf
