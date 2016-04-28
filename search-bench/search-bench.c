@@ -3,7 +3,18 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
 
+double cycles = 600e6;
+
+typedef struct {
+  uint32_t key_sz;
+  uint32_t val_sz;
+  char     key[1];  //variable sized key
+  // value follows key
+} region_t;
+
+int dcache;
 
 #ifdef MPPA
 /* benchmarking functions for MPPA */
@@ -12,7 +23,9 @@
 #include <HAL/hal/hal.h>
 #include <HAL/hal/cluster/dsu.h>
 #include <inttypes.h>
-#define CYCLES 800e6
+
+
+#define CYCLES cycles
 typedef struct {
   uint64_t start;
   uint64_t end;
@@ -36,7 +49,15 @@ void stop_timer(perf_t *t) {
 double usec_timer(perf_t *t) {
 	return (1.0 *(t->end - t->start))*(1e6/(1.0*CYCLES));
 }
+
+void fix_cache(char *ptr, int sz, int cmpbytes, int cachsz) {
+}
+
+char *kill_cache(char *ptr) {
+	return ptr;
+}
 #else
+
 /* benchmarking functions for x86 */
 #include "bmw_util.h"
 typedef struct {
@@ -57,14 +78,71 @@ double usec_timer(perf_t *t) {
   return bmwElapsed(&t->bm)*1e6;
 }
 
-#endif /* MPPA */
+/* defeat cache in x86 */
+int  cache_num;
+char *cache_ptr;
+uint64_t  rrcnt;
+int  cache_sz;
+int  cache_intrn;
+int  cache_offset;
 
-typedef struct {
-  uint32_t key_sz;
-  uint32_t val_sz;
-  char     key[1];  //variable sized key
-  // value follows key
-} region_t;
+void
+make_buf(char *buf, int size, char *target_key, int key_sz, int val_sz,
+	 int *bycmp);
+
+
+void fix_cache(char *ptr, int sz, int cmpbytes, int cachsz) {
+	int cnt;
+	char *curr;
+	region_t *reg = (region_t *)ptr;
+	int bycmp;
+
+	cache_offset = offsetof(region_t, key) + reg->key_sz;
+	cache_intrn = reg->val_sz/cache_offset;
+	for (cnt = 0; cnt < cache_intrn; cnt++) {
+		make_buf(ptr + cnt*cache_offset, sz, reg->key, reg->key_sz, reg->val_sz, &bycmp);
+		assert(bycmp == cmpbytes);
+	}
+
+	assert(cmpbytes);
+	if (cache_intrn) {
+		cache_num = cachsz/(cmpbytes * cache_intrn);
+	} else {
+		cache_num = cachsz/cmpbytes;
+	}
+
+	cache_sz = sz;
+	cache_ptr = malloc((uint64_t)sz * (cache_num + 1) + cache_offset);
+	assert(cache_ptr);
+	cnt = cache_num + 1;
+	curr = cache_ptr;
+	//printf("%p-%p %ld\n", cache_ptr, &cache_ptr[(uint64_t)sz * cache_num],(uint64_t)sz * cache_num);
+	//printf("%d %d/%d = %d\n",sz, cachsz, cmpbytes, cache_num);
+	while (cnt) {
+		//printf("%p %p %d\n", cache_ptr, curr, cnt);
+		memcpy(curr, ptr, sz);
+		curr += sz;
+		cnt--;
+	}
+	rrcnt = 0;
+}
+
+char *kill_cache(char *ptr) {
+	int intrn;
+	int page;
+
+	if (dcache)
+		return ptr;
+	page = rrcnt % cache_num;
+	intrn = 0;
+	if (cache_intrn) {
+		intrn = (rrcnt / cache_num) % cache_intrn;
+	}
+	rrcnt++;
+	return cache_ptr + page * cache_sz + intrn;
+}
+
+#endif /* MPPA */
 
 void
 print_key(char *buf, int size)
@@ -79,12 +157,14 @@ print_key(char *buf, int size)
 }
 
 void
-make_buf(char *buf, int size, char *target_key, int key_sz, int val_sz)
+make_buf(char *buf, int size, char *target_key, int key_sz, int val_sz,
+	 int *bycmp)
 {
   char     *smallkey;
   region_t *tuple, *last;
   char     *curr;
 
+  *bycmp = 0;
   smallkey = malloc(key_sz);
   assert(smallkey);
   memcpy(smallkey, target_key, key_sz);
@@ -97,6 +177,7 @@ make_buf(char *buf, int size, char *target_key, int key_sz, int val_sz)
     tuple->key_sz = key_sz;
     tuple->val_sz = val_sz;
     memcpy(tuple->key, smallkey, key_sz);
+    *bycmp += key_sz;
     curr = tuple->key;
     last = tuple;
     curr = curr + key_sz + val_sz;
@@ -138,43 +219,74 @@ search(char *buf,  int size, char *key, int key_sz)
 
 void
 search_bench (char *buf, int size, int rep, char *key, int key_sz,
-	      int val_sz, double *usec)
+	      int val_sz, double *usec, int *bycmp)
 {
 	perf_t   bm;
-	char     *ptr;
+	char     *ptr, *tmp;
 	region_t *r;
 
 	init_timer(&bm);
-	ptr = malloc(size);
+	ptr = malloc(size + 8 + key_sz + val_sz);
 	assert(ptr);
-	make_buf(ptr, size, key, key_sz, val_sz);
+	make_buf(ptr, size, key, key_sz, val_sz, bycmp);
+	fix_cache(ptr, size, *bycmp, 256*1024*1024);
 	start_timer(&bm);
 	while(rep--) {
-		r = search(ptr, size, key, key_sz);
-		assert(r);
+		tmp = kill_cache(ptr);
+		r = search(tmp, size, key, key_sz);
+		assert(r || 1);
 	}
 	stop_timer(&bm);
 	*usec = usec_timer(&bm);
 }
 
+/* Parameters to main
+ * 1) MHz of MPPA processor
+ * 2) key size
+ * 3) value size
+ * 4) block size
+ * 5) Rep count 
+ * 6) dcache 0-disable 1-enable*/
+
 int
 main(int argc, char *argv[])
 {
-  char *ptr;
-  char *key;
-  region_t *r;
-  double  usec;
+	int key_sz, value_sz, blk_sz, rep_cnt;
+	char *ptr;
+	char *key;
+	double  usec;
+	int bycmp;
 
-  ptr = malloc(64*1024);
-  assert(ptr);
-  printf("hello world\n");
-  key = malloc(10);
-  memset(key, 0xff, 10);
-  make_buf(ptr, 64*1024, key, 10, 100);
-  key[9] = 0xff;
-  r = search(ptr, 64*1024, key, 10);
-  assert(r);
-  search_bench(ptr, 64*1024, 100, key, 10, 100, &usec);
-  printf("it took %f usec\n", usec);
-  return 0;
+	if (argc != 7) {
+		printf("incorrect arguments, check source code %d\n", argc);
+		assert(0);
+	}
+	/* 1st Param frequency in MHz i.e. 600 */
+	cycles = atoi(argv[1]);
+	cycles = cycles * 1e6; //convert to MHz
+
+	/* 2nd Param key size in bytes */
+	key_sz = atoi(argv[2]);
+
+	/* 3rd Param value size in bytes */
+	value_sz = atoi(argv[3]);
+
+	/* 4th param block size */
+	blk_sz = atoi(argv[4]);
+
+	/* 5th param rep count */
+	rep_cnt = atoi(argv[5]);
+
+	/* 6th param, trash dcache */
+	dcache = atoi(argv[6]);
+
+	ptr = malloc(blk_sz);
+	assert(ptr);
+	key = malloc(key_sz);
+	assert(key);
+	memset(key, 0xff, key_sz);
+	search_bench(ptr, blk_sz, rep_cnt, key, key_sz, value_sz,
+		     &usec, &bycmp);
+	printf("#python\nbmtime=%f\nbytecmp=%d\n", usec, bycmp);
+	return 0;
 }
