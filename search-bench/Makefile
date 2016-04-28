@@ -1,4 +1,4 @@
-exe: search-k1 search-x86 ../libgpl/libgpl/libgpl.a
+exe := search-k1 search-x86 ../libgpl/libgpl/libgpl.a
 all : $(exe)
 
 ../libgpl/libgpl/libgpl.a:
