@@ -12,7 +12,11 @@
 #include <HAL/hal/hal.h>
 #include <HAL/hal/cluster/dsu.h>
 #include <inttypes.h>
-#define CYCLES 800e6
+
+#include "k_memcmp.h"
+
+#define CYCLES 600e6
+
 typedef struct {
   uint64_t start;
   uint64_t end;
@@ -113,7 +117,6 @@ search(char *buf,  int size, char *key, int key_sz)
   char     *curr;
   int      found = 0;
   int      cmpsz;
-
   curr  = buf;
   tuple = (region_t *)buf;
   assert( (curr + 8) == tuple->key);
@@ -122,10 +125,17 @@ search(char *buf,  int size, char *key, int key_sz)
     if (tuple->key_sz < cmpsz) {
       cmpsz = tuple->key_sz;
     }
-    if (memcmp(tuple->key, key, cmpsz) == 0) {
+    #ifdef MPPA
+    if (jsmemcmp(tuple->key,key,cmpsz) == 0) {
       found = 1;
       break;
     }
+    #else
+    if (memcmp(tuple->key,key,cmpsz) == 0) {
+      found = 1;
+      break;
+    }
+    #endif
     curr = tuple->key;
     curr = curr + tuple->key_sz + tuple->val_sz;
     tuple = (region_t *)curr;
