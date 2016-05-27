@@ -5,6 +5,11 @@
 #include <string.h>
 #include <stddef.h>
 
+#ifdef __K1__
+#include <mppa_rpc.h>
+#include <mppa_remote.h>
+#endif
+
 double cycles = 600e6;
 
 typedef struct {
@@ -23,24 +28,7 @@ int dcache;
 #include <HAL/hal/hal.h>
 #include <HAL/hal/cluster/dsu.h>
 #include <inttypes.h>
-
-static inline
-int jsmemcmp(void * s1, void * s2, unsigned n)
-{
-  uint64_t u1 = *(const uint64_t*)s1;
-  uint64_t u2 = *(const uint64_t*)s2;
-  const uint64_t * p1 = (const uint64_t*)((const char*)s1 + (n & 7));
-  const uint64_t * p2 = (const uint64_t*)((const char*)s2 + (n & 7));
-  n = n >> 3;
-  while (n > 0 && u1 == u2) {
-    u1 = *(p1 ++);
-    u2 = *(p2 ++);
-    n --;
-  }
-  u1 = __builtin_bswap64(u1);
-  u2 = __builtin_bswap64(u2);
-  return (u1 > u2) - (u1 < u2);
-}
+#include "kmemcmp/kmemcmp.h"
 
 #define CYCLES cycles
 typedef struct {
@@ -185,12 +173,20 @@ make_buf(char *buf, int size, char *target_key, int key_sz, int val_sz,
   smallkey = malloc(key_sz);
   assert(smallkey);
   memcpy(smallkey, target_key, key_sz);
+#ifdef RANDKEY
+  uint32_t *p = (uint32_t *)smallkey;
+  srand (time(NULL));
+#else
   smallkey[key_sz-1]--;
+#endif
   tuple = (region_t *) buf;
   last = tuple;
   curr = (char *)tuple;
   assert( (curr + 8) == tuple->key);
   while ((curr + 8 + key_sz) < (buf + size)) {
+#ifdef RANDKEY
+    *p = (uint32_t)(rand()%0x3000000+*bycmp);
+#endif
     tuple->key_sz = key_sz;
     tuple->val_sz = val_sz;
     memcpy(tuple->key, smallkey, key_sz);
@@ -220,17 +216,14 @@ search(char *buf,  int size, char *key, int key_sz)
     if (tuple->key_sz < cmpsz) {
       cmpsz = tuple->key_sz;
     }
-    #ifdef MPPA
-    if (jsmemcmp(tuple->key, key, cmpsz) == 0) {
-      found = 1;
-      break;
-    }
-    #else
+#ifdef MPPA
+#define memcmp kmemcmp
+#endif
     if (memcmp(tuple->key, key, cmpsz) == 0) {
       found = 1;
       break;
     }
-    #endif
+#undef memcmp
     curr = tuple->key;
     curr = curr + tuple->key_sz + tuple->val_sz;
     tuple = (region_t *)curr;
@@ -251,7 +244,10 @@ search_bench (char *buf, int size, int rep, char *key, int key_sz,
 
 	init_timer(&bm);
 	ptr = malloc(size + 8 + key_sz + val_sz);
-	assert(ptr);
+	if(!ptr){
+		printf("Out of mem!\n");
+		exit(1);
+	}
 	make_buf(ptr, size, key, key_sz, val_sz, bycmp);
 	fix_cache(ptr, size, *bycmp, 256*1024*1024);
 	start_timer(&bm);
@@ -281,28 +277,40 @@ main(int argc, char *argv[])
 	double  usec;
 	int bycmp;
 
-	if (argc != 7) {
+#ifdef __K1__
+	mppa_rpc_client_init();
+	mppa_remote_client_init();
+#endif
+
+#ifdef __K1__
+	int offset = 1;
+#else
+	int offset = 0;
+#endif
+
+	if (argc != 7 + offset) {
 		printf("incorrect arguments, check source code %d\n", argc);
 		assert(0);
 	}
+
 	/* 1st Param frequency in MHz i.e. 600 */
-	cycles = atoi(argv[1]);
+	cycles = atoi(argv[1 + offset]);
 	cycles = cycles * 1e6; //convert to MHz
 
 	/* 2nd Param key size in bytes */
-	key_sz = atoi(argv[2]);
+	key_sz = atoi(argv[2 + offset]);
 
 	/* 3rd Param value size in bytes */
-	value_sz = atoi(argv[3]);
+	value_sz = atoi(argv[3 + offset]);
 
 	/* 4th param block size */
-	blk_sz = atoi(argv[4]);
+	blk_sz = atoi(argv[4 + offset]);
 
 	/* 5th param rep count */
-	rep_cnt = atoi(argv[5]);
+	rep_cnt = atoi(argv[5 + offset]);
 
 	/* 6th param, trash dcache */
-	dcache = atoi(argv[6]);
+	dcache = atoi(argv[6 + offset]);
 
 	ptr = malloc(blk_sz);
 	assert(ptr);
