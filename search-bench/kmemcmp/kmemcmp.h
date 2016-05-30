@@ -29,7 +29,7 @@ int kmemcmp(const void *s1, const void *s2, size_t n)
   const uint64_t *u2 = (void *)s2;
   int i;
 #define USZ	sizeof(*u1)
-//#define ASM_CACHED
+#define ASM_CACHED
 #ifdef ASM_CACHED
 	  volatile int different = 0;
 	  __asm__ __volatile__ (
